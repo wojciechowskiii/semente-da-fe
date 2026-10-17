@@ -19,20 +19,28 @@
   button { background:var(--verde); color:#fff; border:none; cursor:pointer; }
   button:hover { background:var(--verde-escuro); }
   button.sec { background:var(--cartao); color:var(--entrada); border:1px solid var(--entrada); width:auto; margin:0; padding:6px 12px; }
+  .icone { font-size:1.2rem; line-height:1; padding:6px 10px; }
+  .botoes { display:flex; gap:8px; }
   .linha { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
   .linha > * { flex:1; min-width:150px; }
   .linha > button { flex:0 0 auto; }
   .totais { display:flex; gap:12px; flex-wrap:wrap; }
-  .totais div { flex:1; min-width:140px; }
+  .totais div { flex:1; min-width:130px; }
   .rotulo { font-size:.85rem; opacity:.7; }
   .valor { font-size:1.4rem; font-weight:700; }
   .tabela { overflow-x:auto; }
   table { width:100%; border-collapse:collapse; min-width:520px; }
   td, th { padding:8px; border-bottom:1px solid var(--linha); text-align:left; font-size:.95rem; }
   .entrada { color:var(--entrada); font-weight:600; } .saida { color:var(--saida); font-weight:600; }
-  .icone { font-size:1.2rem; line-height:1; padding:6px 10px; }
-  .botoes { display:flex; gap:8px; }
   .hidden { display:none; }
+  .link { background:none; border:none; color:var(--entrada); text-decoration:underline; padding:4px 0; width:auto; margin:6px 0 0; }
+  .link:hover { background:none; }
+  .grafico { display:flex; gap:18px; align-items:flex-end; overflow-x:auto; padding:8px 4px; }
+  .mes { display:flex; flex-direction:column; align-items:center; gap:3px; min-width:64px; }
+  .barras { display:flex; gap:4px; align-items:flex-end; height:140px; }
+  .barra { width:18px; border-radius:4px 4px 0 0; }
+  .barra.e { background:var(--entrada); } .barra.s { background:var(--saida); }
+  .mes .rotulo { font-size:.75rem; opacity:1; }
   #tituloRelatorio { display:none; }
   @media print {
     body, body.escuro { --verde-claro:#fff; --cartao:#fff; --texto:#000; --linha:#ddd; --entrada:#1f8a4c; --saida:#c0392b; color-scheme:light; }
@@ -54,13 +62,20 @@
     <input id="email" type="email" placeholder="E-mail">
     <input id="senha" type="password" placeholder="Senha (mínimo 6 caracteres)">
     <button id="btnEntrar">Entrar</button>
-    <button id="btnCriar" class="sec">Criar conta</button>
+    <button id="btnCriar" class="sec">Criar conta</button><br>
+    <button id="btnEsqueci" class="link">Esqueci minha senha</button>
     <p id="msg"></p>
+  </section>
+
+  <section id="telaSenha" class="card hidden">
+    <h2>Criar nova senha</h2>
+    <input id="novaSenha" type="password" placeholder="Nova senha (mínimo 6 caracteres)">
+    <button id="btnSalvarSenha">Salvar nova senha</button>
+    <p id="msgSenha"></p>
   </section>
 
   <section id="telaApp" class="hidden">
     <div id="tituloRelatorio"></div>
-
 
     <div class="card noprint">
       <div class="rotulo">Mostrar o mês:</div>
@@ -71,9 +86,16 @@
     </div>
 
     <div class="card totais">
-      <div><div class="rotulo">Saldo</div><div id="saldo" class="valor">R$ 0,00</div></div>
+      <div id="boxAnterior"><div class="rotulo">Saldo do mês anterior</div><div id="saldoAnterior" class="valor">R$ 0,00</div></div>
       <div><div class="rotulo">Entradas</div><div id="totEntrada" class="valor entrada">R$ 0,00</div></div>
       <div><div class="rotulo">Saídas</div><div id="totSaida" class="valor saida">R$ 0,00</div></div>
+      <div><div class="rotulo">Saldo</div><div id="saldo" class="valor">R$ 0,00</div></div>
+    </div>
+
+    <div class="card">
+      <h3>Entradas e saídas por mês</h3>
+      <div id="grafico" class="grafico"></div>
+      <div class="rotulo">Verde = entradas · Vermelho = saídas (últimos 6 meses com lançamentos)</div>
     </div>
 
     <div class="card">
@@ -92,12 +114,10 @@
         <option value="entrada">Entrada</option>
         <option value="saida">Saída</option>
       </select>
-      <select id="categoria">
-        <option>Dízimo</option>
-        <option>Oferta</option>
-        <option>Despesa</option>
-        <option>Outro</option>
-      </select>
+      <div class="linha">
+        <select id="categoria"></select>
+        <button id="btnNovaCat" class="sec">+ Nova categoria</button>
+      </div>
       <input id="descricao" placeholder="Descrição">
       <input id="valor" type="number" step="0.01" placeholder="Valor (ex.: 150.50)">
       <input id="data" type="date">
@@ -111,6 +131,7 @@
         <button id="btnCsv" class="sec noprint">Baixar planilha</button>
         <button id="btnImprimir" class="sec noprint">Imprimir relatório</button>
       </div>
+      <input id="busca" class="noprint" type="search" placeholder="🔍 Buscar por descrição, categoria ou nome">
       <div class="tabela">
         <table>
           <thead><tr><th>Data</th><th>Categoria</th><th>Descrição</th><th>Valor</th><th>Lançado por</th><th class="noprint"></th></tr></thead>
@@ -131,17 +152,23 @@
   const brl = n => Number(n).toLocaleString("pt-BR", { style:"currency", currency:"BRL" });
   const hoje = () => new Date().toLocaleDateString("sv-SE"); // AAAA-MM-DD
   const fmtData = s => { const [a, m, d] = s.split("-"); return `${d}/${m}/${a}`; };
+  const CATEGORIAS_PADRAO = ["Dízimo", "Oferta", "Despesa", "Outro"];
 
-  let todos = [];       // todos os lançamentos vindos do banco
-  let meuId = null;     // id de quem está logado
+  let todos = [];          // todos os lançamentos vindos do banco
+  let extras = [];         // categorias criadas pelos usuários
+  let visiveisAtual = [];  // o que está aparecendo na lista (para a planilha)
+  let meuId = null;
   let editandoId = null;
+  let emRecuperacao = false;
 
   async function atualizarTela() {
     const { data: { session } } = await db.auth.getSession();
+    const recup = emRecuperacao && !!session;
+    $("telaSenha").classList.toggle("hidden", !recup);
     $("telaLogin").classList.toggle("hidden", !!session);
-    $("telaApp").classList.toggle("hidden", !session);
+    $("telaApp").classList.toggle("hidden", !session || recup);
     $("btnSair").classList.toggle("hidden", !session);
-    if (session) {
+    if (session && !recup) {
       if (!$("filtroMes").value && !$("filtroMes").dataset.todos) $("filtroMes").value = hoje().slice(0, 7);
       limparForm();
       carregar();
@@ -151,33 +178,74 @@
   async function carregar() {
     const { data: { user } } = await db.auth.getUser();
     meuId = user.id;
-    const { data, error } = await db.from("lancamentos").select("*").order("data", { ascending:false }).order("id", { ascending:false });
-    if (error) { alert(error.message); return; }
-    todos = data;
+    const r = await db.from("lancamentos").select("*").order("data", { ascending:false }).order("id", { ascending:false });
+    if (r.error) { alert(r.error.message); return; }
+    todos = r.data;
+    const c = await db.from("categorias").select("nome").order("nome");
+    extras = c.error ? [] : c.data.map(x => x.nome);
+    montarCategorias();
     mostrar();
   }
 
-  function filtrados() {
-    const mes = $("filtroMes").value;
-    return todos.filter(t => !mes || t.data.startsWith(mes));
+  function montarCategorias(selecionar) {
+    const nomes = [...CATEGORIAS_PADRAO];
+    [...extras, ...todos.map(t => t.categoria)].forEach(n => {
+      if (n && !nomes.some(x => x.toLowerCase() === n.toLowerCase())) nomes.push(n);
+    });
+    const atual = selecionar || $("categoria").value;
+    $("categoria").innerHTML = "";
+    nomes.forEach(n => {
+      const o = document.createElement("option");
+      o.value = n; o.textContent = n;
+      $("categoria").appendChild(o);
+    });
+    if (nomes.includes(atual)) $("categoria").value = atual;
   }
 
   function mostrar() {
-    const dados = filtrados();
     const mes = $("filtroMes").value;
+    const doMes = todos.filter(t => !mes || t.data.startsWith(mes));
+    const busca = $("busca").value.trim().toLowerCase();
+    const visiveis = busca
+      ? doMes.filter(t => [t.descricao, t.categoria, t.lancado_por].join(" ").toLowerCase().includes(busca))
+      : doMes;
+    visiveisAtual = visiveis;
+
     $("tituloRelatorio").textContent = "Semente da Fé — Relatório " + (mes ? "de " + mes.split("-")[1] + "/" + mes.split("-")[0] : "de todos os meses");
+
+    // saldo que veio dos meses anteriores
+    let anterior = 0;
+    if (mes) {
+      todos.forEach(t => { if (t.data < mes + "-01") anterior += t.tipo === "entrada" ? Number(t.valor) : -Number(t.valor); });
+    }
+    $("boxAnterior").classList.toggle("hidden", !mes);
 
     let ent = 0, sai = 0;
     const porCategoria = {};
-    $("lista").innerHTML = "";
-    dados.forEach(t => {
+    doMes.forEach(t => {
       const v = Number(t.valor);
       if (t.tipo === "entrada") ent += v; else sai += v;
       porCategoria[t.categoria] = porCategoria[t.categoria] || { ent:0, sai:0 };
       porCategoria[t.categoria][t.tipo === "entrada" ? "ent" : "sai"] += v;
+    });
+    $("saldoAnterior").textContent = brl(anterior);
+    $("totEntrada").textContent = brl(ent);
+    $("totSaida").textContent = brl(sai);
+    $("saldo").textContent = brl(anterior + ent - sai);
 
+    $("listaCategorias").innerHTML = "";
+    Object.keys(porCategoria).sort().forEach(cat => {
       const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${fmtData(t.data)}</td><td></td><td></td><td class="${t.tipo}">${brl(v)}</td><td></td><td class="noprint"></td>`;
+      tr.innerHTML = `<td></td><td class="entrada">${brl(porCategoria[cat].ent)}</td><td class="saida">${brl(porCategoria[cat].sai)}</td>`;
+      tr.children[0].textContent = cat;
+      $("listaCategorias").appendChild(tr);
+    });
+    if (!doMes.length) $("listaCategorias").innerHTML = '<tr><td colspan="3">Nenhum lançamento neste período.</td></tr>';
+
+    $("lista").innerHTML = "";
+    visiveis.forEach(t => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${fmtData(t.data)}</td><td></td><td></td><td class="${t.tipo}">${brl(t.valor)}</td><td></td><td class="noprint"></td>`;
       tr.children[1].textContent = t.categoria;
       tr.children[2].textContent = t.descricao;
       tr.children[4].textContent = t.lancado_por;
@@ -197,21 +265,41 @@
       }
       $("lista").appendChild(tr);
     });
+    if (!visiveis.length) $("lista").innerHTML = '<tr><td colspan="6">Nenhum lançamento encontrado.</td></tr>';
 
-    $("totEntrada").textContent = brl(ent);
-    $("totSaida").textContent = brl(sai);
-    $("saldo").textContent = brl(ent - sai);
+    desenharGrafico();
+  }
 
-    $("listaCategorias").innerHTML = "";
-    Object.keys(porCategoria).sort().forEach(cat => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `<td></td><td class="entrada">${brl(porCategoria[cat].ent)}</td><td class="saida">${brl(porCategoria[cat].sai)}</td>`;
-      tr.children[0].textContent = cat;
-      $("listaCategorias").appendChild(tr);
+  function desenharGrafico() {
+    const porMes = {};
+    todos.forEach(t => {
+      const m = t.data.slice(0, 7);
+      porMes[m] = porMes[m] || { e:0, s:0 };
+      porMes[m][t.tipo === "entrada" ? "e" : "s"] += Number(t.valor);
     });
-    if (!dados.length) {
-      $("listaCategorias").innerHTML = '<tr><td colspan="3">Nenhum lançamento neste período.</td></tr>';
-    }
+    const meses = Object.keys(porMes).sort().slice(-6);
+    const g = $("grafico");
+    g.innerHTML = "";
+    if (!meses.length) { g.textContent = "Ainda não há lançamentos."; return; }
+    const max = Math.max(...meses.map(m => Math.max(porMes[m].e, porMes[m].s)), 1);
+    const altura = v => v > 0 ? Math.max(3, Math.round(v / max * 140)) : 0;
+    const curto = v => Math.round(v).toLocaleString("pt-BR");
+    meses.forEach(m => {
+      const [a, mm] = m.split("-");
+      const col = document.createElement("div");
+      col.className = "mes";
+      col.title = `${mm}/${a}: entradas ${brl(porMes[m].e)} · saídas ${brl(porMes[m].s)}`;
+      const barras = document.createElement("div");
+      barras.className = "barras";
+      const be = document.createElement("div"); be.className = "barra e"; be.style.height = altura(porMes[m].e) + "px";
+      const bs = document.createElement("div"); bs.className = "barra s"; bs.style.height = altura(porMes[m].s) + "px";
+      barras.append(be, bs);
+      const nome = document.createElement("div"); nome.className = "rotulo"; nome.textContent = `${mm}/${a.slice(2)}`;
+      const ve = document.createElement("div"); ve.className = "rotulo entrada"; ve.textContent = "↑ " + curto(porMes[m].e);
+      const vs = document.createElement("div"); vs.className = "rotulo saida"; vs.textContent = "↓ " + curto(porMes[m].s);
+      col.append(barras, nome, ve, vs);
+      g.appendChild(col);
+    });
   }
 
   function limparForm() {
@@ -242,7 +330,7 @@
   }
   function baixarCsv() {
     const linhas = [["Data","Tipo","Categoria","Descrição","Valor","Lançado por"].map(celula).join(";")];
-    filtrados().slice().reverse().forEach(t => {
+    visiveisAtual.slice().reverse().forEach(t => {
       linhas.push([fmtData(t.data), t.tipo === "entrada" ? "Entrada" : "Saída", t.categoria, t.descricao,
         String(t.valor).replace(".", ","), t.lancado_por].map(celula).join(";"));
     });
@@ -254,29 +342,26 @@
     URL.revokeObjectURL(a.href);
   }
 
-  // ---- Botões ----
+  // ---- Botões da tela de lançamentos ----
   $("filtroMes").onchange = () => { $("filtroMes").dataset.todos = ""; mostrar(); };
   $("btnTodos").onclick = () => { $("filtroMes").value = ""; $("filtroMes").dataset.todos = "1"; mostrar(); };
+  $("busca").oninput = mostrar;
   $("btnCsv").onclick = baixarCsv;
   $("btnImprimir").onclick = () => window.print();
   $("btnCancelar").onclick = limparForm;
 
-  $("btnEntrar").onclick = async () => {
-    const { error } = await db.auth.signInWithPassword({ email:$("email").value, password:$("senha").value });
-    $("msg").textContent = error ? "Não foi possível entrar: " + error.message : "";
-    atualizarTela();
+  $("btnNovaCat").onclick = async () => {
+    let nome = prompt("Nome da nova categoria:");
+    if (nome === null) return;
+    nome = nome.trim().slice(0, 30);
+    if (!nome) return;
+    const existente = [...$("categoria").options].find(o => o.value.toLowerCase() === nome.toLowerCase());
+    if (existente) { $("categoria").value = existente.value; return; }
+    const { error } = await db.from("categorias").insert({ nome });
+    if (error) return alert("Não foi possível criar a categoria: " + error.message);
+    extras.push(nome);
+    montarCategorias(nome);
   };
-
-  $("btnCriar").onclick = async () => {
-    if (!$("nome").value.trim()) { $("msg").textContent = "Digite seu nome para criar a conta."; return; }
-    const { error } = await db.auth.signUp({
-      email:$("email").value, password:$("senha").value,
-      options:{ data:{ nome:$("nome").value.trim() } }
-    });
-    $("msg").textContent = error ? error.message : "Conta criada! Se pedir, confirme pelo e-mail. Depois é só entrar.";
-  };
-
-  $("btnSair").onclick = async () => { await db.auth.signOut(); todos = []; atualizarTela(); };
 
   $("btnAdd").onclick = async () => {
     const valor = parseFloat($("valor").value);
@@ -293,6 +378,49 @@
     limparForm();
     carregar();
   };
+
+  // ---- Login, senha e sair ----
+  $("btnEntrar").onclick = async () => {
+    const { error } = await db.auth.signInWithPassword({ email:$("email").value, password:$("senha").value });
+    $("msg").textContent = error ? "Não foi possível entrar: " + error.message : "";
+    atualizarTela();
+  };
+
+  $("btnCriar").onclick = async () => {
+    if (!$("nome").value.trim()) { $("msg").textContent = "Digite seu nome para criar a conta."; return; }
+    const { error } = await db.auth.signUp({
+      email:$("email").value, password:$("senha").value,
+      options:{ data:{ nome:$("nome").value.trim() } }
+    });
+    $("msg").textContent = error ? error.message : "Conta criada! Se pedir, confirme pelo e-mail. Depois é só entrar.";
+  };
+
+  $("btnEsqueci").onclick = async () => {
+    const email = $("email").value.trim();
+    if (!email) { $("msg").textContent = "Digite seu e-mail no campo acima e clique de novo em “Esqueci minha senha”."; return; }
+    const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + window.location.pathname });
+    $("msg").textContent = error ? "Não foi possível enviar: " + error.message
+      : "Se este e-mail tiver conta, enviamos um link para criar uma nova senha. Olhe também a caixa de spam.";
+  };
+
+  // quando a pessoa chega pelo link do e-mail, mostra a tela de nova senha
+  db.auth.onAuthStateChange(evento => {
+    if (evento === "PASSWORD_RECOVERY") { emRecuperacao = true; setTimeout(atualizarTela, 0); }
+  });
+
+  $("btnSalvarSenha").onclick = async () => {
+    const nova = $("novaSenha").value;
+    if (nova.length < 6) { $("msgSenha").textContent = "A senha precisa ter pelo menos 6 caracteres."; return; }
+    const { error } = await db.auth.updateUser({ password: nova });
+    if (error) { $("msgSenha").textContent = "Não foi possível salvar: " + error.message; return; }
+    emRecuperacao = false;
+    $("novaSenha").value = ""; $("msgSenha").textContent = "";
+    history.replaceState(null, "", window.location.pathname);
+    alert("Senha alterada com sucesso!");
+    atualizarTela();
+  };
+
+  $("btnSair").onclick = async () => { await db.auth.signOut(); todos = []; emRecuperacao = false; atualizarTela(); };
 
   // ---- Lua: fundo preto ----
   function aplicarTema(escuro) {
