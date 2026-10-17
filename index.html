@@ -10,21 +10,32 @@
   body { margin:0; font-family:system-ui,Arial,sans-serif; background:var(--verde-claro); color:var(--texto); }
   header { background:var(--verde); color:#fff; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; }
   header strong { font-size:1.3rem; }
-  main { max-width:800px; margin:20px auto; padding:0 16px; }
+  main { max-width:860px; margin:20px auto; padding:0 16px; }
   .card { background:#fff; border-radius:12px; padding:20px; margin-bottom:16px; box-shadow:0 1px 4px rgba(0,0,0,.08); }
   input, select, button { font:inherit; padding:10px; border-radius:8px; border:1px solid #b9c9be; width:100%; margin:6px 0; }
   button { background:var(--verde); color:#fff; border:none; cursor:pointer; }
   button:hover { background:var(--verde-escuro); }
   button.sec { background:#fff; color:var(--verde); border:1px solid var(--verde); width:auto; margin:0; padding:6px 12px; }
+  .linha { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .linha > * { flex:1; min-width:150px; }
+  .linha > button { flex:0 0 auto; }
   .totais { display:flex; gap:12px; flex-wrap:wrap; }
   .totais div { flex:1; min-width:140px; }
   .rotulo { font-size:.85rem; opacity:.7; }
   .valor { font-size:1.4rem; font-weight:700; }
   .tabela { overflow-x:auto; }
-  table { width:100%; border-collapse:collapse; min-width:560px; }
+  table { width:100%; border-collapse:collapse; min-width:520px; }
   td, th { padding:8px; border-bottom:1px solid #e3e3e3; text-align:left; font-size:.95rem; }
   .entrada { color:var(--verde); font-weight:600; } .saida { color:var(--vermelho); font-weight:600; }
   .hidden { display:none; }
+  #tituloRelatorio { display:none; }
+  @media print {
+    body { background:#fff; }
+    header, .noprint { display:none !important; }
+    #tituloRelatorio { display:block; font-size:1.4rem; font-weight:700; margin-bottom:12px; }
+    .card { box-shadow:none; border:1px solid #ddd; }
+    table { min-width:0; }
+  }
 </style>
 </head>
 <body>
@@ -42,6 +53,16 @@
   </section>
 
   <section id="telaApp" class="hidden">
+    <div id="tituloRelatorio"></div>
+
+    <div class="card noprint">
+      <div class="rotulo">Mostrar o mês:</div>
+      <div class="linha">
+        <input id="filtroMes" type="month">
+        <button id="btnTodos" class="sec">Ver todos os meses</button>
+      </div>
+    </div>
+
     <div class="card totais">
       <div><div class="rotulo">Saldo</div><div id="saldo" class="valor">R$ 0,00</div></div>
       <div><div class="rotulo">Entradas</div><div id="totEntrada" class="valor entrada">R$ 0,00</div></div>
@@ -49,7 +70,17 @@
     </div>
 
     <div class="card">
-      <h3>Novo lançamento</h3>
+      <h3>Total por categoria</h3>
+      <div class="tabela">
+        <table>
+          <thead><tr><th>Categoria</th><th>Entradas</th><th>Saídas</th></tr></thead>
+          <tbody id="listaCategorias"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card noprint">
+      <h3 id="tituloForm">Novo lançamento</h3>
       <select id="tipo">
         <option value="entrada">Entrada</option>
         <option value="saida">Saída</option>
@@ -64,13 +95,18 @@
       <input id="valor" type="number" step="0.01" placeholder="Valor (ex.: 150.50)">
       <input id="data" type="date">
       <button id="btnAdd">Adicionar</button>
+      <button id="btnCancelar" class="sec hidden">Cancelar edição</button>
     </div>
 
     <div class="card">
-      <h3>Lançamentos</h3>
+      <div class="linha" style="justify-content:space-between">
+        <h3 style="margin:0">Lançamentos</h3>
+        <button id="btnCsv" class="sec noprint">Baixar planilha</button>
+        <button id="btnImprimir" class="sec noprint">Imprimir relatório</button>
+      </div>
       <div class="tabela">
         <table>
-          <thead><tr><th>Data</th><th>Categoria</th><th>Descrição</th><th>Valor</th><th>Lançado por</th><th></th></tr></thead>
+          <thead><tr><th>Data</th><th>Categoria</th><th>Descrição</th><th>Valor</th><th>Lançado por</th><th class="noprint"></th></tr></thead>
           <tbody id="lista"></tbody>
         </table>
       </div>
@@ -80,7 +116,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
-  // >>> COLE AQUI os dados do seu projeto Supabase <<<
   const SUPABASE_URL = "https://ylooorccjabkyvoyfyuj.supabase.co";
   const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlsb29vcmNjamFia3l2b3lmeXVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIyNDUyNTMsImV4cCI6MjEwNzgyMTI1M30.XI2z78jYYLfAweIxPK2LJxx0vGBNv9-9AGQOQ5jLGE4";
 
@@ -88,41 +123,136 @@
   const $ = id => document.getElementById(id);
   const brl = n => Number(n).toLocaleString("pt-BR", { style:"currency", currency:"BRL" });
   const hoje = () => new Date().toLocaleDateString("sv-SE"); // AAAA-MM-DD
+  const fmtData = s => { const [a, m, d] = s.split("-"); return `${d}/${m}/${a}`; };
+
+  let todos = [];       // todos os lançamentos vindos do banco
+  let meuId = null;     // id de quem está logado
+  let editandoId = null;
 
   async function atualizarTela() {
     const { data: { session } } = await db.auth.getSession();
     $("telaLogin").classList.toggle("hidden", !!session);
     $("telaApp").classList.toggle("hidden", !session);
     $("btnSair").classList.toggle("hidden", !session);
-    if (session) { $("data").value = hoje(); carregar(); }
+    if (session) {
+      if (!$("filtroMes").value && !$("filtroMes").dataset.todos) $("filtroMes").value = hoje().slice(0, 7);
+      limparForm();
+      carregar();
+    }
   }
 
   async function carregar() {
     const { data: { user } } = await db.auth.getUser();
+    meuId = user.id;
     const { data, error } = await db.from("lancamentos").select("*").order("data", { ascending:false }).order("id", { ascending:false });
     if (error) { alert(error.message); return; }
+    todos = data;
+    mostrar();
+  }
+
+  function filtrados() {
+    const mes = $("filtroMes").value;
+    return todos.filter(t => !mes || t.data.startsWith(mes));
+  }
+
+  function mostrar() {
+    const dados = filtrados();
+    const mes = $("filtroMes").value;
+    $("tituloRelatorio").textContent = "Semente da Fé — Relatório " + (mes ? "de " + mes.split("-")[1] + "/" + mes.split("-")[0] : "de todos os meses");
+
     let ent = 0, sai = 0;
+    const porCategoria = {};
     $("lista").innerHTML = "";
-    data.forEach(t => {
-      if (t.tipo === "entrada") ent += Number(t.valor); else sai += Number(t.valor);
-      const [a, m, d] = t.data.split("-");
+    dados.forEach(t => {
+      const v = Number(t.valor);
+      if (t.tipo === "entrada") ent += v; else sai += v;
+      porCategoria[t.categoria] = porCategoria[t.categoria] || { ent:0, sai:0 };
+      porCategoria[t.categoria][t.tipo === "entrada" ? "ent" : "sai"] += v;
+
       const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${d}/${m}/${a}</td><td></td><td></td><td class="${t.tipo}">${brl(t.valor)}</td><td></td><td></td>`;
+      tr.innerHTML = `<td>${fmtData(t.data)}</td><td></td><td></td><td class="${t.tipo}">${brl(v)}</td><td></td><td class="noprint"></td>`;
       tr.children[1].textContent = t.categoria;
       tr.children[2].textContent = t.descricao;
       tr.children[4].textContent = t.lancado_por;
-      if (t.user_id === user.id) {
-        const b = document.createElement("button");
-        b.className = "sec"; b.textContent = "Apagar";
-        b.onclick = async () => { if (confirm("Apagar este lançamento?")) { await db.from("lancamentos").delete().eq("id", t.id); carregar(); } };
-        tr.children[5].appendChild(b);
+      if (t.user_id === meuId) {
+        const be = document.createElement("button");
+        be.className = "sec"; be.textContent = "Editar"; be.style.marginRight = "6px";
+        be.onclick = () => editar(t);
+        const bd = document.createElement("button");
+        bd.className = "sec"; bd.textContent = "Apagar";
+        bd.onclick = async () => {
+          if (!confirm("Apagar este lançamento?")) return;
+          const { error } = await db.from("lancamentos").delete().eq("id", t.id);
+          if (error) return alert(error.message);
+          carregar();
+        };
+        tr.children[5].append(be, bd);
       }
       $("lista").appendChild(tr);
     });
+
     $("totEntrada").textContent = brl(ent);
     $("totSaida").textContent = brl(sai);
     $("saldo").textContent = brl(ent - sai);
+
+    $("listaCategorias").innerHTML = "";
+    Object.keys(porCategoria).sort().forEach(cat => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td></td><td class="entrada">${brl(porCategoria[cat].ent)}</td><td class="saida">${brl(porCategoria[cat].sai)}</td>`;
+      tr.children[0].textContent = cat;
+      $("listaCategorias").appendChild(tr);
+    });
+    if (!dados.length) {
+      $("listaCategorias").innerHTML = '<tr><td colspan="3">Nenhum lançamento neste período.</td></tr>';
+    }
   }
+
+  function limparForm() {
+    editandoId = null;
+    $("tituloForm").textContent = "Novo lançamento";
+    $("btnAdd").textContent = "Adicionar";
+    $("btnCancelar").classList.add("hidden");
+    $("descricao").value = ""; $("valor").value = "";
+    $("tipo").value = "entrada"; $("categoria").selectedIndex = 0;
+    $("data").value = hoje();
+  }
+
+  function editar(t) {
+    editandoId = t.id;
+    $("tituloForm").textContent = "Editar lançamento";
+    $("btnAdd").textContent = "Salvar alteração";
+    $("btnCancelar").classList.remove("hidden");
+    $("tipo").value = t.tipo; $("categoria").value = t.categoria;
+    $("descricao").value = t.descricao; $("valor").value = t.valor; $("data").value = t.data;
+    $("tituloForm").scrollIntoView({ behavior:"smooth" });
+  }
+
+  // ---- Planilha (CSV, abre no Excel) ----
+  function celula(txt) {
+    let s = String(txt ?? "");
+    if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; // evita fórmulas maliciosas na planilha
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+  function baixarCsv() {
+    const linhas = [["Data","Tipo","Categoria","Descrição","Valor","Lançado por"].map(celula).join(";")];
+    filtrados().slice().reverse().forEach(t => {
+      linhas.push([fmtData(t.data), t.tipo === "entrada" ? "Entrada" : "Saída", t.categoria, t.descricao,
+        String(t.valor).replace(".", ","), t.lancado_por].map(celula).join(";"));
+    });
+    const blob = new Blob(["\uFEFF" + linhas.join("\r\n")], { type:"text/csv;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "semente-da-fe-" + ($("filtroMes").value || "todos") + ".csv";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  // ---- Botões ----
+  $("filtroMes").onchange = () => { $("filtroMes").dataset.todos = ""; mostrar(); };
+  $("btnTodos").onclick = () => { $("filtroMes").value = ""; $("filtroMes").dataset.todos = "1"; mostrar(); };
+  $("btnCsv").onclick = baixarCsv;
+  $("btnImprimir").onclick = () => window.print();
+  $("btnCancelar").onclick = limparForm;
 
   $("btnEntrar").onclick = async () => {
     const { error } = await db.auth.signInWithPassword({ email:$("email").value, password:$("senha").value });
@@ -139,19 +269,21 @@
     $("msg").textContent = error ? error.message : "Conta criada! Se pedir, confirme pelo e-mail. Depois é só entrar.";
   };
 
-  $("btnSair").onclick = async () => { await db.auth.signOut(); atualizarTela(); };
+  $("btnSair").onclick = async () => { await db.auth.signOut(); todos = []; atualizarTela(); };
 
   $("btnAdd").onclick = async () => {
     const valor = parseFloat($("valor").value);
     if (!$("descricao").value.trim() || isNaN(valor) || !$("data").value) return alert("Preencha descrição, valor e data.");
-    const { data: { user } } = await db.auth.getUser();
-    const { error } = await db.from("lancamentos").insert({
-      descricao:$("descricao").value.trim(), valor, tipo:$("tipo").value,
-      categoria:$("categoria").value, data:$("data").value,
-      lancado_por: user.user_metadata.nome || user.email
-    });
+    const campos = { descricao:$("descricao").value.trim(), valor, tipo:$("tipo").value, categoria:$("categoria").value, data:$("data").value };
+    let error;
+    if (editandoId) {
+      ({ error } = await db.from("lancamentos").update(campos).eq("id", editandoId));
+    } else {
+      const { data: { user } } = await db.auth.getUser();
+      ({ error } = await db.from("lancamentos").insert({ ...campos, lancado_por: user.user_metadata.nome || user.email }));
+    }
     if (error) return alert(error.message);
-    $("descricao").value = ""; $("valor").value = "";
+    limparForm();
     carregar();
   };
 
