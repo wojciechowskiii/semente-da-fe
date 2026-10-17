@@ -30,8 +30,7 @@
   table { width:100%; border-collapse:collapse; min-width:520px; }
   td, th { padding:8px; border-bottom:1px solid var(--linha); text-align:left; font-size:.95rem; }
   .entrada { color:var(--entrada); font-weight:600; } .saida { color:var(--saida); font-weight:600; }
-  .opcao { display:flex; align-items:center; gap:12px; cursor:pointer; }
-  .opcao input { width:auto; margin:0; transform:scale(1.5); }
+  .icone { font-size:1.2rem; line-height:1; padding:6px 10px; }
   .botoes { display:flex; gap:8px; }
   .hidden { display:none; }
   #tituloRelatorio { display:none; }
@@ -46,7 +45,7 @@
 </style>
 </head>
 <body>
-<header><strong>🌱 Semente da Fé</strong><div class="botoes"><button id="btnConfig" class="sec hidden">⚙️ Configurações</button><button id="btnSair" class="sec hidden">Sair</button></div></header>
+<header><strong>🌱 Semente da Fé</strong><div class="botoes"><button id="btnSair" class="sec hidden">Sair</button><button id="btnTema" class="sec icone" title="Fundo preto" aria-label="Alternar fundo preto" aria-pressed="false">🌙</button></div></header>
 <main>
 
   <section id="telaLogin" class="card">
@@ -62,11 +61,6 @@
   <section id="telaApp" class="hidden">
     <div id="tituloRelatorio"></div>
 
-    <div id="painelConfig" class="card noprint hidden">
-      <h3>Configurações</h3>
-      <label class="opcao"><input type="checkbox" id="chkEscuro"><span>Fundo preto (descansa os olhos)</span></label>
-      <div class="rotulo" style="margin-top:8px">Fica salvo neste aparelho.</div>
-    </div>
 
     <div class="card noprint">
       <div class="rotulo">Mostrar o mês:</div>
@@ -147,7 +141,6 @@
     $("telaLogin").classList.toggle("hidden", !!session);
     $("telaApp").classList.toggle("hidden", !session);
     $("btnSair").classList.toggle("hidden", !session);
-    $("btnConfig").classList.toggle("hidden", !session);
     if (session) {
       if (!$("filtroMes").value && !$("filtroMes").dataset.todos) $("filtroMes").value = hoje().slice(0, 7);
       limparForm();
@@ -301,17 +294,17 @@
     carregar();
   };
 
-  // ---- Configurações: fundo preto ----
+  // ---- Lua: fundo preto ----
   function aplicarTema(escuro) {
     document.body.classList.toggle("escuro", escuro);
-    $("chkEscuro").checked = escuro;
+    $("btnTema").setAttribute("aria-pressed", escuro ? "true" : "false");
   }
   try { aplicarTema(localStorage.getItem("tema") === "escuro"); } catch (e) {}
-  $("chkEscuro").onchange = () => {
-    aplicarTema($("chkEscuro").checked);
-    try { localStorage.setItem("tema", $("chkEscuro").checked ? "escuro" : "claro"); } catch (e) {}
+  $("btnTema").onclick = () => {
+    const escuro = !document.body.classList.contains("escuro");
+    aplicarTema(escuro);
+    try { localStorage.setItem("tema", escuro ? "escuro" : "claro"); } catch (e) {}
   };
-  $("btnConfig").onclick = () => $("painelConfig").classList.toggle("hidden");
 
   atualizarTela();
 </script>
