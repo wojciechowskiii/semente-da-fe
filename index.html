@@ -88,6 +88,7 @@
   .fab:hover { transform:scale(1.08); }
 
   #tituloRelatorio { display:none; }
+  .so-impressao { display:none; }
 
   @keyframes aparecer { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
   @keyframes crescer { from { transform:scaleY(0); } to { transform:scaleY(1); } }
@@ -109,6 +110,18 @@
     /* Na impressão, mostra só o título do relatório e a lista de lançamentos */
     #telaApp > *:not(#tituloRelatorio):not(.card-lancamentos) { display:none !important; }
     .card-lancamentos { border:none; padding:0; margin:0; }
+    #tituloRelatorio { border-bottom:2px solid #1f8a4c; padding-bottom:8px; }
+    .so-impressao { display:block !important; }
+    #cabRelatorio { margin:0 0 10px; font-size:.9rem; color:#444; }
+    thead { display:table-header-group; }
+    tr { page-break-inside:avoid; }
+    #rodapeRelatorio { margin-top:18px; page-break-inside:avoid; }
+    #totaisImp { max-width:360px; margin-left:auto; }
+    .linha-total { display:flex; justify-content:space-between; gap:20px; padding:5px 0; border-bottom:1px solid #ddd; }
+    .linha-total.final { font-weight:700; font-size:1.1rem; border-bottom:2px solid #000; }
+    .linha-total .entrada { color:#1f8a4c; } .linha-total .saida { color:#c0392b; }
+    .assinaturas { display:flex; gap:40px; margin-top:70px; }
+    .assinaturas div { flex:1; text-align:center; border-top:1px solid #000; padding-top:6px; font-size:.9rem; }
   }
 </style>
 </head>
@@ -220,11 +233,19 @@
         <button id="btnImprimir" class="sec noprint">Imprimir relatório</button>
       </div>
       <input id="busca" class="noprint" type="search" placeholder="🔍 Buscar por descrição, fornecedor, categoria ou nome">
+      <div id="cabRelatorio" class="so-impressao"></div>
       <div class="tabela">
         <table>
           <thead><tr><th>Data</th><th>Categoria</th><th>Descrição</th><th>Fornecedor</th><th>Valor</th><th>Lançado por</th><th class="noprint">Comprovante</th><th class="noprint"></th></tr></thead>
           <tbody id="lista"></tbody>
         </table>
+      </div>
+      <div id="rodapeRelatorio" class="so-impressao">
+        <div id="totaisImp"></div>
+        <div class="assinaturas">
+          <div>Tesoureiro(a)</div>
+          <div>Pastor(a) / Presidente</div>
+        </div>
       </div>
     </div>
 
@@ -331,6 +352,7 @@
       ? doMes.filter(t => [t.descricao, t.fornecedor || "", t.categoria, t.lancado_por].join(" ").toLowerCase().includes(busca))
       : doMes;
     visiveisAtual = visiveis;
+    atualizarRodape(mes, busca);
 
     $("lista").innerHTML = "";
     visiveis.forEach(t => {
@@ -367,7 +389,7 @@
 
     if (soLista) return;
 
-    $("tituloRelatorio").textContent = "Semente da Fé — Relatório " + (mes ? "de " + mes.split("-")[1] + "/" + mes.split("-")[0] : "de todos os meses");
+    $("tituloRelatorio").textContent = "Semente da Fé — Prestação de contas " + (mes ? "de " + mes.split("-")[1] + "/" + mes.split("-")[0] : "de todos os meses");
 
     // saldo que veio dos meses anteriores
     let anterior = 0;
@@ -481,6 +503,38 @@
     });
     area.append(rosca, legenda);
   }
+
+  // Totais que aparecem no fim do relatório impresso (somam o que está na lista)
+  function atualizarRodape(mes, busca) {
+    let ent = 0, sai = 0;
+    visiveisAtual.forEach(t => { if (t.tipo === "entrada") ent += Number(t.valor); else sai += Number(t.valor); });
+    let anterior = null;
+    if (mes && !busca) {
+      anterior = 0;
+      todos.forEach(t => { if (t.data < mes + "-01") anterior += t.tipo === "entrada" ? Number(t.valor) : -Number(t.valor); });
+    }
+    const linhas = [];
+    if (anterior !== null) linhas.push(["Saldo do mês anterior", anterior, ""]);
+    linhas.push(["Total de entradas", ent, "entrada"], ["Total de saídas", sai, "saida"]);
+    linhas.push([anterior !== null ? "Saldo final" : "Resultado (entradas − saídas)", (anterior || 0) + ent - sai, ""]);
+    const caixa = $("totaisImp");
+    caixa.innerHTML = "";
+    linhas.forEach(([rotulo, valor, cls], i) => {
+      const l = document.createElement("div");
+      l.className = "linha-total" + (i === linhas.length - 1 ? " final" : "");
+      const a = document.createElement("span"); a.textContent = rotulo;
+      const b = document.createElement("span"); b.textContent = brl(valor); if (cls) b.className = cls;
+      l.append(a, b);
+      caixa.appendChild(l);
+    });
+  }
+
+  // Data de emissão (e filtro de busca, se houver) no topo do relatório; vale também para Ctrl+P
+  window.addEventListener("beforeprint", () => {
+    const busca = $("busca").value.trim();
+    $("cabRelatorio").textContent = "Emitido em " + new Date().toLocaleDateString("pt-BR")
+      + (busca ? ` · Filtro de busca: “${busca}”` : "");
+  });
 
   function limparForm() {
     editandoId = null;
