@@ -140,11 +140,9 @@
       <h1>Semente da Fé</h1>
       <p class="sub">Finanças da igreja</p>
     </div>
-    <input id="nome" placeholder="Seu nome (só para criar conta)">
     <input id="email" type="email" placeholder="E-mail">
-    <input id="senha" type="password" placeholder="Senha (mínimo 6 caracteres)">
-    <button id="btnEntrar">Entrar</button>
-    <button id="btnCriar" class="sec">Criar conta</button><br>
+    <input id="senha" type="password" placeholder="Senha">
+    <button id="btnEntrar">Entrar</button><br>
     <button id="btnEsqueci" class="link">Esqueci minha senha</button>
     <p id="msg"></p>
     <p class="versiculo">“Se tiverdes fé como um grão de mostarda… nada vos será impossível.”<br>Mateus 17:20</p>
@@ -658,15 +656,6 @@
     const { error } = await db.auth.signInWithPassword({ email:$("email").value, password:$("senha").value });
     $("msg").textContent = error ? "Não foi possível entrar: " + error.message : "";
     atualizarTela();
-  };
-
-  $("btnCriar").onclick = async () => {
-    if (!$("nome").value.trim()) { $("msg").textContent = "Digite seu nome para criar a conta."; return; }
-    const { error } = await db.auth.signUp({
-      email:$("email").value, password:$("senha").value,
-      options:{ data:{ nome:$("nome").value.trim() } }
-    });
-    $("msg").textContent = error ? error.message : "Conta criada! Se pedir, confirme pelo e-mail. Depois é só entrar.";
   };
 
   $("btnEsqueci").onclick = async () => {
