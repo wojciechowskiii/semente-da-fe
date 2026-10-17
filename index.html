@@ -72,6 +72,8 @@
   .mes .rotulo { font-size:.75rem; opacity:1; }
   .chips { display:flex; gap:8px; margin-bottom:12px; }
   button.chip.ativo { background:var(--verde); color:#fff; border-color:var(--verde); }
+  button.chip.chip-sai { color:#c0392b; border-color:#c0392b; }
+  button.chip.chip-sai.ativo { background:#c0392b; color:#fff; border-color:#c0392b; }
   #pizza { display:flex; gap:24px; align-items:center; flex-wrap:wrap; }
   .rosca { width:170px; height:170px; border-radius:50%; position:relative; flex:0 0 auto; animation:girar .8s ease both; }
   .furo { position:absolute; inset:30px; border-radius:50%; background:var(--cartao); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
@@ -172,7 +174,7 @@
       <h3>Divisão por categoria</h3>
       <div class="chips noprint">
         <button id="btnPizzaEnt" class="sec chip ativo">Entradas</button>
-        <button id="btnPizzaSai" class="sec chip">Saídas</button>
+        <button id="btnPizzaSai" class="sec chip chip-sai">Saídas</button>
       </div>
       <div id="pizza"></div>
     </div>
@@ -235,6 +237,7 @@
   const fmtData = s => { const [a, m, d] = s.split("-"); return `${d}/${m}/${a}`; };
   const CATEGORIAS_PADRAO = ["Dízimo", "Oferta", "Despesa", "Outro"];
   const PALETA = ["#1f8a4c", "#3b82f6", "#f59e0b", "#a855f7", "#ef4444", "#14b8a6", "#ec4899", "#84cc16"];
+  const PALETA_SAIDA = ["#c0392b", "#e0584c", "#9b2d24", "#f08a7e", "#d35400", "#e57373", "#7f1d1d", "#ff9f80"];
 
   let todos = [];          // todos os lançamentos vindos do banco
   let extras = [];         // categorias criadas pelos usuários
@@ -420,11 +423,12 @@
       area.textContent = "Sem " + (tipoPizza === "entrada" ? "entradas" : "saídas") + " neste período.";
       return;
     }
+    const cores = tipoPizza === "saida" ? PALETA_SAIDA : PALETA;
     let acum = 0;
     const partes = nomes.map((n, i) => {
       const ini = acum / total * 100;
       acum += soma[n];
-      return `${PALETA[i % PALETA.length]} ${ini}% ${acum / total * 100}%`;
+      return `${cores[i % cores.length]} ${ini}% ${acum / total * 100}%`;
     });
     const rosca = document.createElement("div");
     rosca.className = "rosca";
@@ -440,7 +444,7 @@
     legenda.className = "legenda";
     nomes.forEach((n, i) => {
       const item = document.createElement("div"); item.className = "item";
-      const bola = document.createElement("span"); bola.className = "bola"; bola.style.background = PALETA[i % PALETA.length];
+      const bola = document.createElement("span"); bola.className = "bola"; bola.style.background = cores[i % cores.length];
       const txt = document.createElement("span");
       txt.textContent = `${n}: ${brl(soma[n])} (${Math.round(soma[n] / total * 100)}%)`;
       item.append(bola, txt);
