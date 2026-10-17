@@ -33,7 +33,7 @@
   .rotulo { font-size:.85rem; opacity:.7; }
   .valor { font-size:1.4rem; font-weight:700; }
   .tabela { overflow-x:auto; }
-  table { width:100%; border-collapse:collapse; min-width:520px; }
+  table { width:100%; border-collapse:collapse; min-width:640px; }
   td, th { padding:8px; border-bottom:1px solid var(--linha); text-align:left; font-size:.95rem; }
   .entrada { color:var(--entrada); font-weight:600; } .saida { color:var(--saida); font-weight:600; }
   .hidden { display:none !important; }
@@ -200,6 +200,7 @@
         <button id="btnNovaCat" class="sec">+ Nova categoria</button>
       </div>
       <input id="descricao" placeholder="Descrição">
+      <input id="fornecedor" placeholder="Fornecedor (opcional)" maxlength="80">
       <input id="valor" type="number" step="0.01" placeholder="Valor (ex.: 150.50)">
       <input id="data" type="date">
       <button id="btnAdd">Adicionar</button>
@@ -212,10 +213,10 @@
         <button id="btnCsv" class="sec noprint">Baixar planilha</button>
         <button id="btnImprimir" class="sec noprint">Imprimir relatório</button>
       </div>
-      <input id="busca" class="noprint" type="search" placeholder="🔍 Buscar por descrição, categoria ou nome">
+      <input id="busca" class="noprint" type="search" placeholder="🔍 Buscar por descrição, fornecedor, categoria ou nome">
       <div class="tabela">
         <table>
-          <thead><tr><th>Data</th><th>Categoria</th><th>Descrição</th><th>Valor</th><th>Lançado por</th><th class="noprint"></th></tr></thead>
+          <thead><tr><th>Data</th><th>Categoria</th><th>Descrição</th><th>Fornecedor</th><th>Valor</th><th>Lançado por</th><th class="noprint"></th></tr></thead>
           <tbody id="lista"></tbody>
         </table>
       </div>
@@ -307,17 +308,18 @@
     doMesAtual = doMes;
     const busca = $("busca").value.trim().toLowerCase();
     const visiveis = busca
-      ? doMes.filter(t => [t.descricao, t.categoria, t.lancado_por].join(" ").toLowerCase().includes(busca))
+      ? doMes.filter(t => [t.descricao, t.fornecedor || "", t.categoria, t.lancado_por].join(" ").toLowerCase().includes(busca))
       : doMes;
     visiveisAtual = visiveis;
 
     $("lista").innerHTML = "";
     visiveis.forEach(t => {
       const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${fmtData(t.data)}</td><td></td><td></td><td class="${t.tipo}">${brl(t.valor)}</td><td></td><td class="noprint"></td>`;
+      tr.innerHTML = `<td>${fmtData(t.data)}</td><td></td><td></td><td></td><td class="${t.tipo}">${brl(t.valor)}</td><td></td><td class="noprint"></td>`;
       tr.children[1].textContent = t.categoria;
       tr.children[2].textContent = t.descricao;
-      tr.children[4].textContent = t.lancado_por;
+      tr.children[3].textContent = t.fornecedor || "";
+      tr.children[5].textContent = t.lancado_por;
       if (t.user_id === meuId) {
         const be = document.createElement("button");
         be.className = "sec"; be.textContent = "Editar"; be.style.marginRight = "6px";
@@ -330,11 +332,11 @@
           if (error) return alert(error.message);
           carregar();
         };
-        tr.children[5].append(be, bd);
+        tr.children[6].append(be, bd);
       }
       $("lista").appendChild(tr);
     });
-    if (!visiveis.length) $("lista").innerHTML = '<tr><td colspan="6">Nenhum lançamento encontrado.</td></tr>';
+    if (!visiveis.length) $("lista").innerHTML = '<tr><td colspan="7">Nenhum lançamento encontrado.</td></tr>';
 
     if (soLista) return;
 
@@ -458,7 +460,7 @@
     $("tituloForm").textContent = "Novo lançamento";
     $("btnAdd").textContent = "Adicionar";
     $("btnCancelar").classList.add("hidden");
-    $("descricao").value = ""; $("valor").value = "";
+    $("descricao").value = ""; $("fornecedor").value = ""; $("valor").value = "";
     $("tipo").value = "entrada"; $("categoria").selectedIndex = 0;
     $("data").value = hoje();
   }
@@ -469,7 +471,7 @@
     $("btnAdd").textContent = "Salvar alteração";
     $("btnCancelar").classList.remove("hidden");
     $("tipo").value = t.tipo; $("categoria").value = t.categoria;
-    $("descricao").value = t.descricao; $("valor").value = t.valor; $("data").value = t.data;
+    $("descricao").value = t.descricao; $("fornecedor").value = t.fornecedor || ""; $("valor").value = t.valor; $("data").value = t.data;
     $("tituloForm").scrollIntoView({ behavior:"smooth" });
   }
 
@@ -480,9 +482,9 @@
     return '"' + s.replace(/"/g, '""') + '"';
   }
   function baixarCsv() {
-    const linhas = [["Data","Tipo","Categoria","Descrição","Valor","Lançado por"].map(celula).join(";")];
+    const linhas = [["Data","Tipo","Categoria","Descrição","Fornecedor","Valor","Lançado por"].map(celula).join(";")];
     visiveisAtual.slice().reverse().forEach(t => {
-      linhas.push([fmtData(t.data), t.tipo === "entrada" ? "Entrada" : "Saída", t.categoria, t.descricao,
+      linhas.push([fmtData(t.data), t.tipo === "entrada" ? "Entrada" : "Saída", t.categoria, t.descricao, t.fornecedor || "",
         String(t.valor).replace(".", ","), t.lancado_por].map(celula).join(";"));
     });
     const blob = new Blob(["\uFEFF" + linhas.join("\r\n")], { type:"text/csv;charset=utf-8" });
@@ -523,7 +525,7 @@
   $("btnAdd").onclick = async () => {
     const valor = parseFloat($("valor").value);
     if (!$("descricao").value.trim() || isNaN(valor) || !$("data").value) return alert("Preencha descrição, valor e data.");
-    const campos = { descricao:$("descricao").value.trim(), valor, tipo:$("tipo").value, categoria:$("categoria").value, data:$("data").value };
+    const campos = { descricao:$("descricao").value.trim(), fornecedor:$("fornecedor").value.trim() || null, valor, tipo:$("tipo").value, categoria:$("categoria").value, data:$("data").value };
     let error;
     if (editandoId) {
       ({ error } = await db.from("lancamentos").update(campos).eq("id", editandoId));
