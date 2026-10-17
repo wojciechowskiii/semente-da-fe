@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Semente da Fé</title>
+<style>
+  :root { --verde:#1f8a4c; --verde-escuro:#146236; --verde-claro:#e8f5ec; --texto:#1c2a22; --vermelho:#c0392b;
+          --cartao:#ffffff; --borda:#b9c9be; --linha:#e3e3e3; --entrada:#1f8a4c; --saida:#c0392b; }
+  body.escuro { --verde-claro:#000000; --cartao:#161616; --texto:#e4e4e4; --borda:#3a3a3a; --linha:#2a2a2a;
+                --entrada:#4ade80; --saida:#ff7b6e; color-scheme:dark; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,Arial,sans-serif; background:var(--verde-claro); color:var(--texto); }
+  body, .card, .stat, input, select, button {
+    transition: background-color .3s ease, color .3s ease, border-color .3s ease, transform .12s ease, box-shadow .2s ease;
+  }
+  header { background:var(--verde); color:#fff; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; }
+  header strong { font-size:1.3rem; }
+  main { max-width:860px; margin:20px auto; padding:0 16px 100px; }
+
+  .card { background:var(--cartao); border-radius:14px; padding:20px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,.08); animation:aparecer .4s ease both; }
+  input, select, button { font:inherit; padding:10px; border-radius:8px; border:1px solid var(--borda); background:var(--cartao); color:var(--texto); width:100%; margin:6px 0; }
+  button { background:var(--verde); color:#fff; border:none; cursor:pointer; }
+  button:hover { background:var(--verde-escuro); box-shadow:0 3px 8px rgba(0,0,0,.2); }
+  button:active { transform:scale(.97); }
+  button.sec { background:var(--cartao); color:var(--entrada); border:1px solid var(--entrada); width:auto; margin:0; padding:6px 12px; }
+  button.sec:hover { box-shadow:0 3px 8px rgba(0,0,0,.15); }
+  .icone { font-size:1.2rem; line-height:1; padding:6px 10px; }
+  .botoes { display:flex; gap:8px; }
+  .linha { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .linha > * { flex:1; min-width:150px; }
+  .linha > button { flex:0 0 auto; }
+  .rotulo { font-size:.85rem; opacity:.7; }
+  .valor { font-size:1.4rem; font-weight:700; }
+  .tabela { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; min-width:640px; }
+  td, th { padding:8px; border-bottom:1px solid var(--linha); text-align:left; font-size:.95rem; }
+  .entrada { color:var(--entrada); font-weight:600; } .saida { color:var(--saida); font-weight:600; }
+  .hidden { display:none !important; }
+  .link { background:none; border:none; color:var(--entrada); text-decoration:underline; padding:4px 0; width:auto; margin:6px 0 0; }
+  .link:hover { background:none; box-shadow:none; }
+
+  /* Login */
+  #telaLogin, #telaSenha { max-width:420px; margin:28px auto; }
+  .marca { text-align:center; margin-bottom:8px; }
+  .marca h1 { margin:6px 0 0; color:var(--entrada); font-size:1.8rem; }
+  .marca .sub { margin:2px 0 0; opacity:.7; }
+  .planta { animation:brotar 1s ease both; transform-origin:bottom center; }
+  .versiculo { text-align:center; font-style:italic; font-size:.9rem; opacity:.8; margin:18px 0 0; }
+
+  /* Boas-vindas */
+  .boasvindas { margin:4px 0 16px; animation:aparecer .4s ease both; }
+  .ola { font-size:1.6rem; font-weight:700; }
+
+  /* Cartões de totais */
+  .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; margin-bottom:16px; }
+  .stat { background:var(--cartao); border-radius:14px; padding:16px; display:flex; gap:12px; align-items:center;
+          box-shadow:0 2px 8px rgba(0,0,0,.08); border-left:6px solid var(--borda); animation:aparecer .4s ease both; }
+  .stat .ico { font-size:1.8rem; }
+  .stat.st-ent { border-left-color:var(--entrada); }
+  .stat.st-sai { border-left-color:var(--saida); }
+  .stat.destaque { grid-column:1 / -1; color:#fff; border-left:none; background:linear-gradient(135deg,#1f8a4c,#2fb76a); }
+  .stat.destaque.neg { background:linear-gradient(135deg,#b5322a,#e0584c); }
+  .stat.destaque .valor { font-size:2.1rem; }
+
+  /* Gráficos */
+  .grafico { display:flex; gap:20px; align-items:flex-end; overflow-x:auto; padding:8px 4px; }
+  .mes { display:flex; flex-direction:column; align-items:center; gap:3px; min-width:76px; }
+  .barras { display:flex; gap:5px; align-items:flex-end; height:150px; }
+  .barra { width:26px; border-radius:6px 6px 0 0; transform-origin:bottom; animation:crescer .7s ease both; }
+  .barra.e { background:var(--entrada); } .barra.s { background:var(--saida); }
+  .mes .rotulo { font-size:.75rem; opacity:1; }
+  .chips { display:flex; gap:8px; margin-bottom:12px; }
+  button.chip.ativo { background:var(--verde); color:#fff; border-color:var(--verde); }
+  button.chip.chip-sai { color:#c0392b; border-color:#c0392b; }
+  button.chip.chip-sai.ativo { background:#c0392b; color:#fff; border-color:#c0392b; }
+  #pizza { display:flex; gap:24px; align-items:center; flex-wrap:wrap; }
+  .rosca { width:170px; height:170px; border-radius:50%; position:relative; flex:0 0 auto; animation:girar .8s ease both; }
+  .furo { position:absolute; inset:30px; border-radius:50%; background:var(--cartao); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+  .furo .rotulo { font-size:.75rem; } .furo .tot { font-weight:700; font-size:.95rem; }
+  .legenda { display:flex; flex-direction:column; gap:6px; flex:1; min-width:180px; }
+  .item { display:flex; align-items:center; gap:8px; font-size:.92rem; }
+  .bola { width:12px; height:12px; border-radius:50%; flex:0 0 auto; }
+
+  /* Botão redondo + */
+  .fab { position:fixed; right:20px; bottom:calc(20px + env(safe-area-inset-bottom, 0px)); width:58px; height:58px; padding:0; margin:0;
+         border-radius:50%; font-size:2rem; line-height:1; box-shadow:0 4px 14px rgba(0,0,0,.35); z-index:50; animation:aparecer .4s ease both; }
+  .fab:hover { transform:scale(1.08); }
+
+  #tituloRelatorio { display:none; }
+  .so-impressao { display:none; }
+
+  @keyframes aparecer { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+  @keyframes crescer { from { transform:scaleY(0); } to { transform:scaleY(1); } }
+  @keyframes girar { from { opacity:0; transform:scale(.7) rotate(-40deg); } to { opacity:1; transform:none; } }
+  @keyframes brotar { from { opacity:0; transform:scale(.4); } to { opacity:1; transform:none; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation:none !important; transition:none !important; }
+  }
+  @media print {
+    * { animation:none !important; }
+    body, body.escuro { --verde-claro:#fff; --cartao:#fff; --texto:#000; --linha:#ddd; --entrada:#1f8a4c; --saida:#c0392b; color-scheme:light; }
+    body { background:#fff; }
+    header, .noprint { display:none !important; }
+    #tituloRelatorio { display:block; font-size:1.4rem; font-weight:700; margin-bottom:12px; }
+    .card, .stat { box-shadow:none; border:1px solid #ddd; }
+    .stat.destaque { background:#fff; color:#000; border:1px solid #ddd; }
+    table { min-width:0; }
+    /* Na impressão, mostra só o título do relatório e a lista de lançamentos */
+    #telaApp > *:not(#tituloRelatorio):not(.card-lancamentos) { display:none !important; }
+    .card-lancamentos { border:none; padding:0; margin:0; }
+    #tituloRelatorio { border-bottom:2px solid #1f8a4c; padding-bottom:8px; }
+    .so-impressao { display:block !important; }
+    #cabRelatorio { margin:0 0 10px; font-size:.9rem; color:#444; }
+    thead { display:table-header-group; }
+    tr { page-break-inside:avoid; }
+    #rodapeRelatorio { margin-top:18px; page-break-inside:avoid; }
+    #totaisImp { max-width:360px; margin-left:auto; }
+    .linha-total { display:flex; justify-content:space-between; gap:20px; padding:5px 0; border-bottom:1px solid #ddd; }
+    .linha-total.final { font-weight:700; font-size:1.1rem; border-bottom:2px solid #000; }
+    .linha-total .entrada { color:#1f8a4c; } .linha-total .saida { color:#c0392b; }
+    .assinaturas { display:flex; gap:40px; margin-top:70px; }
+    .assinaturas div { flex:1; text-align:center; border-top:1px solid #000; padding-top:6px; font-size:.9rem; }
+  }
+</style>
+</head>
+<body>
+<header><strong>🌱 Semente da Fé</strong><div class="botoes"><button id="btnSair" class="sec hidden">Sair</button><button id="btnTema" class="sec icone" title="Fundo preto" aria-label="Alternar fundo preto" aria-pressed="false">🌙</button></div></header>
+<main>
+
+  <section id="telaLogin" class="card">
+    <div class="marca">
+      <svg class="planta" viewBox="0 0 120 100" width="110" height="92" aria-hidden="true">
+        <ellipse cx="60" cy="90" rx="42" ry="8" fill="#8b5e34"/>
+        <path d="M60 88 C60 70 60 55 60 40" stroke-width="5" stroke-linecap="round" fill="none" style="stroke:var(--entrada)"/>
+        <path d="M60 52 C40 52 26 40 24 24 C44 24 58 34 60 52Z" style="fill:var(--entrada)"/>
+        <path d="M60 44 C78 44 92 32 96 16 C76 16 62 26 60 44Z" style="fill:var(--entrada);opacity:.7"/>
+      </svg>
+      <h1>Semente da Fé</h1>
+      <p class="sub">Finanças da igreja</p>
+    </div>
+    <input id="nome" placeholder="Seu nome (só para criar conta)">
+    <input id="email" type="email" placeholder="E-mail">
+    <input id="senha" type="password" placeholder="Senha (mínimo 6 caracteres)">
+    <button id="btnEntrar">Entrar</button>
+    <button id="btnCriar" class="sec">Criar conta</button><br>
+    <button id="btnEsqueci" class="link">Esqueci minha senha</button>
+    <p id="msg"></p>
+    <p class="versiculo">“Se tiverdes fé como um grão de mostarda… nada vos será impossível.”<br>Mateus 17:20</p>
+  </section>
+
+  <section id="telaSenha" class="card hidden">
+    <h2>Criar nova senha</h2>
+    <input id="novaSenha" type="password" placeholder="Nova senha (mínimo 6 caracteres)">
+    <button id="btnSalvarSenha">Salvar nova senha</button>
+    <p id="msgSenha"></p>
+  </section>
+
+  <section id="telaApp" class="hidden">
+    <div id="tituloRelatorio"></div>
+
+    <div class="boasvindas noprint">
+      <div id="ola" class="ola"></div>
+      <div id="dataHoje" class="rotulo"></div>
+    </div>
+
+    <div class="card noprint">
+      <div class="rotulo">Mostrar o mês:</div>
+      <div class="linha">
+        <input id="filtroMes" type="month">
+        <button id="btnTodos" class="sec">Ver todos os meses</button>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div id="boxAnterior" class="stat"><div class="ico">📅</div><div><div class="rotulo">Saldo do mês anterior</div><div id="saldoAnterior" class="valor">R$ 0,00</div></div></div>
+      <div class="stat st-ent"><div class="ico">⬆️</div><div><div class="rotulo">Entradas</div><div id="totEntrada" class="valor entrada">R$ 0,00</div></div></div>
+      <div class="stat st-sai"><div class="ico">⬇️</div><div><div class="rotulo">Saídas</div><div id="totSaida" class="valor saida">R$ 0,00</div></div></div>
+      <div id="boxSaldo" class="stat destaque"><div class="ico">💰</div><div><div class="rotulo">Saldo</div><div id="saldo" class="valor">R$ 0,00</div></div></div>
+    </div>
+
+    <div class="card">
+      <h3>Entradas e saídas por mês</h3>
+      <div id="grafico" class="grafico"></div>
+      <div class="rotulo">Verde = entradas · Vermelho = saídas (últimos 6 meses com lançamentos)</div>
+    </div>
+
+    <div class="card">
+      <h3>Divisão por categoria</h3>
+      <div class="chips noprint">
+        <button id="btnPizzaEnt" class="sec chip ativo">Entradas</button>
+        <button id="btnPizzaSai" class="sec chip chip-sai">Saídas</button>
+      </div>
+      <div id="pizza"></div>
+    </div>
+
+    <div class="card">
+      <h3>Total por categoria</h3>
+      <div class="tabela">
+        <table>
+          <thead><tr><th>Categoria</th><th>Entradas</th><th>Saídas</th></tr></thead>
+          <tbody id="listaCategorias"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card noprint">
+      <h3 id="tituloForm">Novo lançamento</h3>
+      <select id="tipo">
+        <option value="entrada">Entrada</option>
+        <option value="saida">Saída</option>
+      </select>
+      <div class="linha">
+        <select id="categoria"></select>
+        <button id="btnNovaCat" class="sec">+ Nova categoria</button>
+      </div>
+      <input id="descricao" placeholder="Descrição">
+      <input id="fornecedor" placeholder="Fornecedor (opcional)" maxlength="80">
+      <input id="valor" type="number" step="0.01" placeholder="Valor (ex.: 150.50)">
+      <input id="data" type="date">
+      <div class="rotulo" style="margin-top:8px">📎 Comprovante (foto ou PDF, até 5 MB)</div>
+      <input id="comprovante" type="file" accept="image/*,application/pdf">
+      <div id="dicaComp" class="rotulo hidden"></div>
+      <button id="btnAdd">Adicionar</button>
+      <button id="btnCancelar" class="sec hidden">Cancelar edição</button>
+    </div>
+
+    <div class="card card-lancamentos">
+      <div class="linha" style="justify-content:space-between">
+        <h3 style="margin:0">Lançamentos</h3>
+        <button id="btnCsv" class="sec noprint">Baixar planilha</button>
+        <button id="btnImprimir" class="sec noprint">Imprimir relatório</button>
+      </div>
+      <input id="busca" class="noprint" type="search" placeholder="🔍 Buscar por descrição, fornecedor, categoria ou nome">
+      <div id="cabRelatorio" class="so-impressao"></div>
+      <div class="tabela">
+        <table>
+          <thead><tr><th>Data</th><th>Categoria</th><th>Descrição</th><th>Fornecedor</th><th>Valor</th><th>Lançado por</th><th class="noprint">Comprovante</th><th class="noprint"></th></tr></thead>
+          <tbody id="lista"></tbody>
+        </table>
+      </div>
+      <div id="rodapeRelatorio" class="so-impressao">
+        <div id="totaisImp"></div>
+        <div class="assinaturas">
+          <div>Tesoureiro(a)</div>
+          <div>Pastor(a) / Presidente</div>
+        </div>
+      </div>
+    </div>
+
+    <button id="btnFab" class="fab noprint" title="Novo lançamento" aria-label="Novo lançamento">+</button>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+  const SUPABASE_URL = "https://ylooorccjabkyvoyfyuj.supabase.co";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlsb29vcmNjamFia3l2b3lmeXVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIyNDUyNTMsImV4cCI6MjEwNzgyMTI1M30.XI2z78jYYLfAweIxPK2LJxx0vGBNv9-9AGQOQ5jLGE4";
+
+  const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const $ = id => document.getElementById(id);
+  const brl = n => Number(n).toLocaleString("pt-BR", { style:"currency", currency:"BRL" });
+  const hoje = () => new Date().toLocaleDateString("sv-SE"); // AAAA-MM-DD
+  const fmtData = s => { const [a, m, d] = s.split("-"); return `${d}/${m}/${a}`; };
+  const CATEGORIAS_PADRAO = ["Dízimo", "Oferta", "Despesa", "Outro"];
+  const PALETA = ["#1f8a4c", "#3b82f6", "#f59e0b", "#a855f7", "#ef4444", "#14b8a6", "#ec4899", "#84cc16"];
+  const PALETA_SAIDA = ["#c0392b", "#e0584c", "#9b2d24", "#f08a7e", "#d35400", "#e57373", "#7f1d1d", "#ff9f80"];
+
+  let todos = [];          // todos os lançamentos vindos do banco
+  let extras = [];         // categorias criadas pelos usuários
+  let doMesAtual = [];     // lançamentos do mês escolhido
+  let visiveisAtual = [];  // o que está aparecendo na lista (para a planilha)
+  let tipoPizza = "entrada";
+  let meuId = null;
+  let editandoId = null;
+  let editandoComp = null; // comprovante que o lançamento em edição já tem
+  let emRecuperacao = false;
+
+  async function verComprovante(caminho) {
+    const janela = window.open("", "_blank"); // abre já, para o navegador não bloquear
+    const { data, error } = await db.storage.from("comprovantes").createSignedUrl(caminho, 3600);
+    if (error || !data) {
+      if (janela) janela.close();
+      return alert("Não foi possível abrir o comprovante: " + (error ? error.message : "tente de novo"));
+    }
+    if (janela) janela.location.href = data.signedUrl; else window.location.href = data.signedUrl;
+  }
+
+  async function atualizarTela() {
+    const { data: { session } } = await db.auth.getSession();
+    const recup = emRecuperacao && !!session;
+    $("telaSenha").classList.toggle("hidden", !recup);
+    $("telaLogin").classList.toggle("hidden", !!session);
+    $("telaApp").classList.toggle("hidden", !session || recup);
+    $("btnSair").classList.toggle("hidden", !session);
+    if (session && !recup) {
+      if (!$("filtroMes").value && !$("filtroMes").dataset.todos) $("filtroMes").value = hoje().slice(0, 7);
+      limparForm();
+      carregar();
+    }
+  }
+
+  async function carregar() {
+    const { data: { user } } = await db.auth.getUser();
+    meuId = user.id;
+    boasVindas(user);
+    const r = await db.from("lancamentos").select("*").order("data", { ascending:false }).order("id", { ascending:false });
+    if (r.error) { alert(r.error.message); return; }
+    todos = r.data;
+    const c = await db.from("categorias").select("nome").order("nome");
+    extras = c.error ? [] : c.data.map(x => x.nome);
+    montarCategorias();
+    mostrar();
+  }
+
+  function boasVindas(user) {
+    const completo = (user.user_metadata && user.user_metadata.nome) || (user.email || "").split("@")[0];
+    const primeiro = completo.trim().split(/\s+/)[0];
+    const h = new Date().getHours();
+    const saudacao = h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite";
+    $("ola").textContent = `${saudacao}, ${primeiro}! 🌱`;
+    const d = new Date().toLocaleDateString("pt-BR", { weekday:"long", day:"numeric", month:"long", year:"numeric" });
+    $("dataHoje").textContent = d.charAt(0).toUpperCase() + d.slice(1);
+  }
+
+  function montarCategorias(selecionar) {
+    const nomes = [...CATEGORIAS_PADRAO];
+    [...extras, ...todos.map(t => t.categoria)].forEach(n => {
+      if (n && !nomes.some(x => x.toLowerCase() === n.toLowerCase())) nomes.push(n);
+    });
+    const atual = selecionar || $("categoria").value;
+    // Entrada não tem "Despesa"; Saída não tem "Dízimo" nem "Oferta"
+    const bloqueadas = $("tipo").value === "saida" ? ["dízimo", "oferta"] : ["despesa"];
+    const lista = nomes.filter(n => n === selecionar || !bloqueadas.includes(n.toLowerCase()));
+    $("categoria").innerHTML = "";
+    lista.forEach(n => {
+      const o = document.createElement("option");
+      o.value = n; o.textContent = n;
+      $("categoria").appendChild(o);
+    });
+    if (lista.includes(atual)) $("categoria").value = atual;
+  }
+
+  // soLista = true: só atualiza a lista (usado na busca, para os gráficos não reanimarem)
+  function mostrar(soLista) {
+    const mes = $("filtroMes").value;
+    const doMes = todos.filter(t => !mes || t.data.startsWith(mes));
+    doMesAtual = doMes;
+    const busca = $("busca").value.trim().toLowerCase();
+    const visiveis = busca
+      ? doMes.filter(t => [t.descricao, t.fornecedor || "", t.categoria, t.lancado_por].join(" ").toLowerCase().includes(busca))
+      : doMes;
+    visiveisAtual = visiveis;
+    atualizarRodape(mes, busca);
+
+    $("lista").innerHTML = "";
+    visiveis.forEach(t => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${fmtData(t.data)}</td><td></td><td></td><td></td><td class="${t.tipo}">${brl(t.valor)}</td><td></td><td class="noprint"></td><td class="noprint"></td>`;
+      tr.children[1].textContent = t.categoria;
+      tr.children[2].textContent = t.descricao;
+      tr.children[3].textContent = t.fornecedor || "";
+      tr.children[5].textContent = t.lancado_por;
+      if (t.comprovante) {
+        const bv = document.createElement("button");
+        bv.className = "sec"; bv.textContent = "📎 Ver";
+        bv.onclick = () => verComprovante(t.comprovante);
+        tr.children[6].appendChild(bv);
+      }
+      if (t.user_id === meuId) {
+        const be = document.createElement("button");
+        be.className = "sec"; be.textContent = "Editar"; be.style.marginRight = "6px";
+        be.onclick = () => editar(t);
+        const bd = document.createElement("button");
+        bd.className = "sec"; bd.textContent = "Apagar";
+        bd.onclick = async () => {
+          if (!confirm("Apagar este lançamento?")) return;
+          const { error } = await db.from("lancamentos").delete().eq("id", t.id);
+          if (error) return alert(error.message);
+          if (t.comprovante) await db.storage.from("comprovantes").remove([t.comprovante]);
+          carregar();
+        };
+        tr.children[7].append(be, bd);
+      }
+      $("lista").appendChild(tr);
+    });
+    if (!visiveis.length) $("lista").innerHTML = '<tr><td colspan="8">Nenhum lançamento encontrado.</td></tr>';
+
+    if (soLista) return;
+
+    $("tituloRelatorio").textContent = "Semente da Fé — Prestação de contas " + (mes ? "de " + mes.split("-")[1] + "/" + mes.split("-")[0] : "de todos os meses");
+
+    // saldo que veio dos meses anteriores
+    let anterior = 0;
+    if (mes) {
+      todos.forEach(t => { if (t.data < mes + "-01") anterior += t.tipo === "entrada" ? Number(t.valor) : -Number(t.valor); });
+    }
+    $("boxAnterior").classList.toggle("hidden", !mes);
+
+    let ent = 0, sai = 0;
+    const porCategoria = {};
+    doMes.forEach(t => {
+      const v = Number(t.valor);
+      if (t.tipo === "entrada") ent += v; else sai += v;
+      porCategoria[t.categoria] = porCategoria[t.categoria] || { ent:0, sai:0 };
+      porCategoria[t.categoria][t.tipo === "entrada" ? "ent" : "sai"] += v;
+    });
+    const saldoFinal = anterior + ent - sai;
+    $("saldoAnterior").textContent = brl(anterior);
+    $("totEntrada").textContent = brl(ent);
+    $("totSaida").textContent = brl(sai);
+    $("saldo").textContent = brl(saldoFinal);
+    $("boxSaldo").classList.toggle("neg", saldoFinal < 0);
+
+    $("listaCategorias").innerHTML = "";
+    Object.keys(porCategoria).sort().forEach(cat => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td></td><td class="entrada">${brl(porCategoria[cat].ent)}</td><td class="saida">${brl(porCategoria[cat].sai)}</td>`;
+      tr.children[0].textContent = cat;
+      $("listaCategorias").appendChild(tr);
+    });
+    if (!doMes.length) $("listaCategorias").innerHTML = '<tr><td colspan="3">Nenhum lançamento neste período.</td></tr>';
+
+    desenharGrafico();
+    desenharPizza();
+  }
+
+  function desenharGrafico() {
+    const porMes = {};
+    todos.forEach(t => {
+      const m = t.data.slice(0, 7);
+      porMes[m] = porMes[m] || { e:0, s:0 };
+      porMes[m][t.tipo === "entrada" ? "e" : "s"] += Number(t.valor);
+    });
+    const meses = Object.keys(porMes).sort().slice(-6);
+    const g = $("grafico");
+    g.innerHTML = "";
+    if (!meses.length) { g.textContent = "Ainda não há lançamentos."; return; }
+    const max = Math.max(...meses.map(m => Math.max(porMes[m].e, porMes[m].s)), 1);
+    const altura = v => v > 0 ? Math.max(4, Math.round(v / max * 150)) : 0;
+    const curto = v => Math.round(v).toLocaleString("pt-BR");
+    meses.forEach(m => {
+      const [a, mm] = m.split("-");
+      const col = document.createElement("div");
+      col.className = "mes";
+      col.title = `${mm}/${a}: entradas ${brl(porMes[m].e)} · saídas ${brl(porMes[m].s)}`;
+      const barras = document.createElement("div");
+      barras.className = "barras";
+      const be = document.createElement("div"); be.className = "barra e"; be.style.height = altura(porMes[m].e) + "px";
+      const bs = document.createElement("div"); bs.className = "barra s"; bs.style.height = altura(porMes[m].s) + "px";
+      barras.append(be, bs);
+      const nome = document.createElement("div"); nome.className = "rotulo"; nome.textContent = `${mm}/${a.slice(2)}`;
+      const ve = document.createElement("div"); ve.className = "rotulo entrada"; ve.textContent = "↑ " + curto(porMes[m].e);
+      const vs = document.createElement("div"); vs.className = "rotulo saida"; vs.textContent = "↓ " + curto(porMes[m].s);
+      col.append(barras, nome, ve, vs);
+      g.appendChild(col);
+    });
+  }
+
+  function desenharPizza() {
+    $("btnPizzaEnt").classList.toggle("ativo", tipoPizza === "entrada");
+    $("btnPizzaSai").classList.toggle("ativo", tipoPizza === "saida");
+    const soma = {};
+    let total = 0;
+    doMesAtual.filter(t => t.tipo === tipoPizza).forEach(t => {
+      soma[t.categoria] = (soma[t.categoria] || 0) + Number(t.valor);
+      total += Number(t.valor);
+    });
+    const area = $("pizza");
+    area.innerHTML = "";
+    const nomes = Object.keys(soma).sort((a, b) => soma[b] - soma[a]);
+    if (!nomes.length || total <= 0) {
+      area.textContent = "Sem " + (tipoPizza === "entrada" ? "entradas" : "saídas") + " neste período.";
+      return;
+    }
+    const cores = tipoPizza === "saida" ? PALETA_SAIDA : PALETA;
+    let acum = 0;
+    const partes = nomes.map((n, i) => {
+      const ini = acum / total * 100;
+      acum += soma[n];
+      return `${cores[i % cores.length]} ${ini}% ${acum / total * 100}%`;
+    });
+    const rosca = document.createElement("div");
+    rosca.className = "rosca";
+    rosca.style.background = `conic-gradient(${partes.join(",")})`;
+    const furo = document.createElement("div");
+    furo.className = "furo";
+    const r1 = document.createElement("div"); r1.className = "rotulo"; r1.textContent = "Total";
+    const r2 = document.createElement("div"); r2.className = "tot"; r2.textContent = brl(total);
+    furo.append(r1, r2);
+    rosca.appendChild(furo);
+
+    const legenda = document.createElement("div");
+    legenda.className = "legenda";
+    nomes.forEach((n, i) => {
+      const item = document.createElement("div"); item.className = "item";
+      const bola = document.createElement("span"); bola.className = "bola"; bola.style.background = cores[i % cores.length];
+      const txt = document.createElement("span");
+      txt.textContent = `${n}: ${brl(soma[n])} (${Math.round(soma[n] / total * 100)}%)`;
+      item.append(bola, txt);
+      legenda.appendChild(item);
+    });
+    area.append(rosca, legenda);
+  }
+
+  // Totais que aparecem no fim do relatório impresso (somam o que está na lista)
+  function atualizarRodape(mes, busca) {
+    let ent = 0, sai = 0;
+    visiveisAtual.forEach(t => { if (t.tipo === "entrada") ent += Number(t.valor); else sai += Number(t.valor); });
+    let anterior = null;
+    if (mes && !busca) {
+      anterior = 0;
+      todos.forEach(t => { if (t.data < mes + "-01") anterior += t.tipo === "entrada" ? Number(t.valor) : -Number(t.valor); });
+    }
+    const linhas = [];
+    if (anterior !== null) linhas.push(["Saldo do mês anterior", anterior, ""]);
+    linhas.push(["Total de entradas", ent, "entrada"], ["Total de saídas", sai, "saida"]);
+    linhas.push([anterior !== null ? "Saldo final" : "Resultado (entradas − saídas)", (anterior || 0) + ent - sai, ""]);
+    const caixa = $("totaisImp");
+    caixa.innerHTML = "";
+    linhas.forEach(([rotulo, valor, cls], i) => {
+      const l = document.createElement("div");
+      l.className = "linha-total" + (i === linhas.length - 1 ? " final" : "");
+      const a = document.createElement("span"); a.textContent = rotulo;
+      const b = document.createElement("span"); b.textContent = brl(valor); if (cls) b.className = cls;
+      l.append(a, b);
+      caixa.appendChild(l);
+    });
+  }
+
+  // Data de emissão (e filtro de busca, se houver) no topo do relatório; vale também para Ctrl+P
+  window.addEventListener("beforeprint", () => {
+    const busca = $("busca").value.trim();
+    $("cabRelatorio").textContent = "Emitido em " + new Date().toLocaleDateString("pt-BR")
+      + (busca ? ` · Filtro de busca: “${busca}”` : "");
+  });
+
+  function limparForm() {
+    editandoId = null;
+    editandoComp = null;
+    $("comprovante").value = "";
+    $("dicaComp").classList.add("hidden");
+    $("tituloForm").textContent = "Novo lançamento";
+    $("btnAdd").textContent = "Adicionar";
+    $("btnCancelar").classList.add("hidden");
+    $("descricao").value = ""; $("fornecedor").value = ""; $("valor").value = "";
+    $("tipo").value = "entrada"; montarCategorias(); $("categoria").selectedIndex = 0;
+    $("data").value = hoje();
+  }
+
+  function editar(t) {
+    editandoId = t.id;
+    editandoComp = t.comprovante || null;
+    $("comprovante").value = "";
+    $("dicaComp").textContent = editandoComp ? "Este lançamento já tem comprovante. Escolha outro arquivo só se quiser substituir." : "";
+    $("dicaComp").classList.toggle("hidden", !editandoComp);
+    $("tituloForm").textContent = "Editar lançamento";
+    $("btnAdd").textContent = "Salvar alteração";
+    $("btnCancelar").classList.remove("hidden");
+    $("tipo").value = t.tipo; montarCategorias(t.categoria); $("categoria").value = t.categoria;
+    $("descricao").value = t.descricao; $("fornecedor").value = t.fornecedor || ""; $("valor").value = t.valor; $("data").value = t.data;
+    $("tituloForm").scrollIntoView({ behavior:"smooth" });
+  }
+
+  // ---- Planilha (CSV, abre no Excel) ----
+  function celula(txt) {
+    let s = String(txt ?? "");
+    if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; // evita fórmulas maliciosas na planilha
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+  function baixarCsv() {
+    const linhas = [["Data","Tipo","Categoria","Descrição","Fornecedor","Valor","Lançado por"].map(celula).join(";")];
+    visiveisAtual.slice().reverse().forEach(t => {
+      linhas.push([fmtData(t.data), t.tipo === "entrada" ? "Entrada" : "Saída", t.categoria, t.descricao, t.fornecedor || "",
+        String(t.valor).replace(".", ","), t.lancado_por].map(celula).join(";"));
+    });
+    const blob = new Blob(["\uFEFF" + linhas.join("\r\n")], { type:"text/csv;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "semente-da-fe-" + ($("filtroMes").value || "todos") + ".csv";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  // ---- Botões da tela de lançamentos ----
+  $("filtroMes").onchange = () => { $("filtroMes").dataset.todos = ""; mostrar(); };
+  $("btnTodos").onclick = () => { $("filtroMes").value = ""; $("filtroMes").dataset.todos = "1"; mostrar(); };
+  $("busca").oninput = () => mostrar(true);
+  $("btnCsv").onclick = baixarCsv;
+  $("btnImprimir").onclick = () => window.print();
+  $("btnCancelar").onclick = limparForm;
+  $("tipo").onchange = () => montarCategorias();
+  $("btnPizzaEnt").onclick = () => { tipoPizza = "entrada"; desenharPizza(); };
+  $("btnPizzaSai").onclick = () => { tipoPizza = "saida"; desenharPizza(); };
+  $("btnFab").onclick = () => {
+    $("tituloForm").scrollIntoView({ behavior:"smooth" });
+    setTimeout(() => $("descricao").focus({ preventScroll:true }), 450);
+  };
+
+  $("btnNovaCat").onclick = async () => {
+    let nome = prompt("Nome da nova categoria:");
+    if (nome === null) return;
+    nome = nome.trim().slice(0, 30);
+    if (!nome) return;
+    const existente = [...$("categoria").options].find(o => o.value.toLowerCase() === nome.toLowerCase());
+    if (existente) { $("categoria").value = existente.value; return; }
+    const { error } = await db.from("categorias").insert({ nome });
+    if (error) return alert("Não foi possível criar a categoria: " + error.message);
+    extras.push(nome);
+    montarCategorias(nome);
+  };
+
+  $("btnAdd").onclick = async () => {
+    const valor = parseFloat($("valor").value);
+    if (!$("descricao").value.trim() || isNaN(valor) || !$("data").value) return alert("Preencha descrição, valor e data.");
+    const campos = { descricao:$("descricao").value.trim(), fornecedor:$("fornecedor").value.trim() || null, valor, tipo:$("tipo").value, categoria:$("categoria").value, data:$("data").value };
+    const arq = $("comprovante").files[0];
+    if (arq) {
+      if (arq.size > 5 * 1024 * 1024) return alert("O comprovante pode ter no máximo 5 MB.");
+      if (!(arq.type.startsWith("image/") || arq.type === "application/pdf")) return alert("Anexe uma foto ou um PDF.");
+    }
+    const { data: { user } } = await db.auth.getUser();
+    const rotuloBtn = $("btnAdd").textContent;
+    $("btnAdd").disabled = true;
+    let caminhoNovo = null;
+    try {
+      if (arq) {
+        $("btnAdd").textContent = "Enviando comprovante...";
+        const ext = ((arq.name.split(".").pop() || "bin").toLowerCase().replace(/[^a-z0-9]/g, "") || "bin").slice(0, 5);
+        caminhoNovo = `${user.id}/${Date.now()}.${ext}`;
+        const up = await db.storage.from("comprovantes").upload(caminhoNovo, arq, { contentType: arq.type });
+        if (up.error) { caminhoNovo = null; return alert("Não foi possível enviar o comprovante: " + up.error.message); }
+        campos.comprovante = caminhoNovo;
+      }
+      let error;
+      if (editandoId) {
+        ({ error } = await db.from("lancamentos").update(campos).eq("id", editandoId));
+      } else {
+        ({ error } = await db.from("lancamentos").insert({ ...campos, lancado_por: user.user_metadata.nome || user.email }));
+      }
+      if (error) {
+        if (caminhoNovo) await db.storage.from("comprovantes").remove([caminhoNovo]);
+        return alert(error.message);
+      }
+      // se substituiu o comprovante de um lançamento editado, apaga o antigo
+      if (caminhoNovo && editandoId && editandoComp) await db.storage.from("comprovantes").remove([editandoComp]);
+      limparForm();
+      carregar();
+    } finally {
+      $("btnAdd").disabled = false;
+      if ($("btnAdd").textContent === "Enviando comprovante...") $("btnAdd").textContent = rotuloBtn;
+    }
+  };
+
+  // ---- Login, senha e sair ----
+  $("btnEntrar").onclick = async () => {
+    const { error } = await db.auth.signInWithPassword({ email:$("email").value, password:$("senha").value });
+    $("msg").textContent = error ? "Não foi possível entrar: " + error.message : "";
+    atualizarTela();
+  };
+
+  $("btnCriar").onclick = async () => {
+    if (!$("nome").value.trim()) { $("msg").textContent = "Digite seu nome para criar a conta."; return; }
+    const { error } = await db.auth.signUp({
+      email:$("email").value, password:$("senha").value,
+      options:{ data:{ nome:$("nome").value.trim() } }
+    });
+    $("msg").textContent = error ? error.message : "Conta criada! Se pedir, confirme pelo e-mail. Depois é só entrar.";
+  };
+
+  $("btnEsqueci").onclick = async () => {
+    const email = $("email").value.trim();
+    if (!email) { $("msg").textContent = "Digite seu e-mail no campo acima e clique de novo em “Esqueci minha senha”."; return; }
+    const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + window.location.pathname });
+    $("msg").textContent = error ? "Não foi possível enviar: " + error.message
+      : "Se este e-mail tiver conta, enviamos um link para criar uma nova senha. Olhe também a caixa de spam.";
+  };
+
+  // quando a pessoa chega pelo link do e-mail, mostra a tela de nova senha
+  db.auth.onAuthStateChange(evento => {
+    if (evento === "PASSWORD_RECOVERY") { emRecuperacao = true; setTimeout(atualizarTela, 0); }
+  });
+
+  $("btnSalvarSenha").onclick = async () => {
+    const nova = $("novaSenha").value;
+    if (nova.length < 6) { $("msgSenha").textContent = "A senha precisa ter pelo menos 6 caracteres."; return; }
+    const { error } = await db.auth.updateUser({ password: nova });
+    if (error) { $("msgSenha").textContent = "Não foi possível salvar: " + error.message; return; }
+    emRecuperacao = false;
+    $("novaSenha").value = ""; $("msgSenha").textContent = "";
+    history.replaceState(null, "", window.location.pathname);
+    alert("Senha alterada com sucesso!");
+    atualizarTela();
+  };
+
+  $("btnSair").onclick = async () => { await db.auth.signOut(); todos = []; emRecuperacao = false; atualizarTela(); };
+
+  // ---- Lua: fundo preto ----
+  function aplicarTema(escuro) {
+    document.body.classList.toggle("escuro", escuro);
+    $("btnTema").setAttribute("aria-pressed", escuro ? "true" : "false");
+  }
+  try { aplicarTema(localStorage.getItem("tema") === "escuro"); } catch (e) {}
+  $("btnTema").onclick = () => {
+    const escuro = !document.body.classList.contains("escuro");
+    aplicarTema(escuro);
+    try { localStorage.setItem("tema", escuro ? "escuro" : "claro"); } catch (e) {}
+  };
+
+  atualizarTela();
+</script>
+</body>
+</html>
