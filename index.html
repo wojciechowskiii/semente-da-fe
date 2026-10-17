@@ -46,6 +46,8 @@
   .marca h1 { margin:6px 0 0; color:var(--entrada); font-size:1.8rem; }
   .marca .sub { margin:2px 0 0; opacity:.7; }
   .planta { animation:brotar 1s ease both; transform-origin:bottom center; }
+  .logo { display:block; width:190px; max-width:70%; height:auto; margin:0 auto 6px; border-radius:50%; }
+  .so-leitor { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
   .versiculo { text-align:center; font-style:italic; font-size:.9rem; opacity:.8; margin:18px 0 0; }
 
   /* Boas-vindas */
@@ -131,13 +133,8 @@
 
   <section id="telaLogin" class="card">
     <div class="marca">
-      <svg class="planta" viewBox="0 0 120 100" width="110" height="92" aria-hidden="true">
-        <ellipse cx="60" cy="90" rx="42" ry="8" fill="#8b5e34"/>
-        <path d="M60 88 C60 70 60 55 60 40" stroke-width="5" stroke-linecap="round" fill="none" style="stroke:var(--entrada)"/>
-        <path d="M60 52 C40 52 26 40 24 24 C44 24 58 34 60 52Z" style="fill:var(--entrada)"/>
-        <path d="M60 44 C78 44 92 32 96 16 C76 16 62 26 60 44Z" style="fill:var(--entrada);opacity:.7"/>
-      </svg>
-      <h1>Semente da Fé</h1>
+      <img class="planta logo" src="logo.png" alt="Semente da Fé — Comunidade Evangélica">
+      <h1 class="so-leitor">Semente da Fé</h1>
       <p class="sub">Finanças da igreja</p>
     </div>
     <input id="email" type="email" placeholder="E-mail">
