@@ -11,43 +11,98 @@
                 --entrada:#4ade80; --saida:#ff7b6e; color-scheme:dark; }
   * { box-sizing:border-box; }
   body { margin:0; font-family:system-ui,Arial,sans-serif; background:var(--verde-claro); color:var(--texto); }
+  body, .card, .stat, input, select, button {
+    transition: background-color .3s ease, color .3s ease, border-color .3s ease, transform .12s ease, box-shadow .2s ease;
+  }
   header { background:var(--verde); color:#fff; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; }
   header strong { font-size:1.3rem; }
-  main { max-width:860px; margin:20px auto; padding:0 16px; }
-  .card { background:var(--cartao); border-radius:12px; padding:20px; margin-bottom:16px; box-shadow:0 1px 4px rgba(0,0,0,.08); }
+  main { max-width:860px; margin:20px auto; padding:0 16px 100px; }
+
+  .card { background:var(--cartao); border-radius:14px; padding:20px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,.08); animation:aparecer .4s ease both; }
   input, select, button { font:inherit; padding:10px; border-radius:8px; border:1px solid var(--borda); background:var(--cartao); color:var(--texto); width:100%; margin:6px 0; }
   button { background:var(--verde); color:#fff; border:none; cursor:pointer; }
-  button:hover { background:var(--verde-escuro); }
+  button:hover { background:var(--verde-escuro); box-shadow:0 3px 8px rgba(0,0,0,.2); }
+  button:active { transform:scale(.97); }
   button.sec { background:var(--cartao); color:var(--entrada); border:1px solid var(--entrada); width:auto; margin:0; padding:6px 12px; }
+  button.sec:hover { box-shadow:0 3px 8px rgba(0,0,0,.15); }
   .icone { font-size:1.2rem; line-height:1; padding:6px 10px; }
   .botoes { display:flex; gap:8px; }
   .linha { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
   .linha > * { flex:1; min-width:150px; }
   .linha > button { flex:0 0 auto; }
-  .totais { display:flex; gap:12px; flex-wrap:wrap; }
-  .totais div { flex:1; min-width:130px; }
   .rotulo { font-size:.85rem; opacity:.7; }
   .valor { font-size:1.4rem; font-weight:700; }
   .tabela { overflow-x:auto; }
   table { width:100%; border-collapse:collapse; min-width:520px; }
   td, th { padding:8px; border-bottom:1px solid var(--linha); text-align:left; font-size:.95rem; }
   .entrada { color:var(--entrada); font-weight:600; } .saida { color:var(--saida); font-weight:600; }
-  .hidden { display:none; }
+  .hidden { display:none !important; }
   .link { background:none; border:none; color:var(--entrada); text-decoration:underline; padding:4px 0; width:auto; margin:6px 0 0; }
-  .link:hover { background:none; }
-  .grafico { display:flex; gap:18px; align-items:flex-end; overflow-x:auto; padding:8px 4px; }
-  .mes { display:flex; flex-direction:column; align-items:center; gap:3px; min-width:64px; }
-  .barras { display:flex; gap:4px; align-items:flex-end; height:140px; }
-  .barra { width:18px; border-radius:4px 4px 0 0; }
+  .link:hover { background:none; box-shadow:none; }
+
+  /* Login */
+  #telaLogin, #telaSenha { max-width:420px; margin:28px auto; }
+  .marca { text-align:center; margin-bottom:8px; }
+  .marca h1 { margin:6px 0 0; color:var(--entrada); font-size:1.8rem; }
+  .marca .sub { margin:2px 0 0; opacity:.7; }
+  .planta { animation:brotar 1s ease both; transform-origin:bottom center; }
+  .versiculo { text-align:center; font-style:italic; font-size:.9rem; opacity:.8; margin:18px 0 0; }
+
+  /* Boas-vindas */
+  .boasvindas { margin:4px 0 16px; animation:aparecer .4s ease both; }
+  .ola { font-size:1.6rem; font-weight:700; }
+
+  /* Cartões de totais */
+  .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; margin-bottom:16px; }
+  .stat { background:var(--cartao); border-radius:14px; padding:16px; display:flex; gap:12px; align-items:center;
+          box-shadow:0 2px 8px rgba(0,0,0,.08); border-left:6px solid var(--borda); animation:aparecer .4s ease both; }
+  .stat .ico { font-size:1.8rem; }
+  .stat.st-ent { border-left-color:var(--entrada); }
+  .stat.st-sai { border-left-color:var(--saida); }
+  .stat.destaque { grid-column:1 / -1; color:#fff; border-left:none; background:linear-gradient(135deg,#1f8a4c,#2fb76a); }
+  .stat.destaque.neg { background:linear-gradient(135deg,#b5322a,#e0584c); }
+  .stat.destaque .valor { font-size:2.1rem; }
+
+  /* Gráficos */
+  .grafico { display:flex; gap:20px; align-items:flex-end; overflow-x:auto; padding:8px 4px; }
+  .mes { display:flex; flex-direction:column; align-items:center; gap:3px; min-width:76px; }
+  .barras { display:flex; gap:5px; align-items:flex-end; height:150px; }
+  .barra { width:26px; border-radius:6px 6px 0 0; transform-origin:bottom; animation:crescer .7s ease both; }
   .barra.e { background:var(--entrada); } .barra.s { background:var(--saida); }
   .mes .rotulo { font-size:.75rem; opacity:1; }
+  .chips { display:flex; gap:8px; margin-bottom:12px; }
+  button.chip.ativo { background:var(--verde); color:#fff; border-color:var(--verde); }
+  #pizza { display:flex; gap:24px; align-items:center; flex-wrap:wrap; }
+  .rosca { width:170px; height:170px; border-radius:50%; position:relative; flex:0 0 auto; animation:girar .8s ease both; }
+  .furo { position:absolute; inset:30px; border-radius:50%; background:var(--cartao); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+  .furo .rotulo { font-size:.75rem; } .furo .tot { font-weight:700; font-size:.95rem; }
+  .legenda { display:flex; flex-direction:column; gap:6px; flex:1; min-width:180px; }
+  .item { display:flex; align-items:center; gap:8px; font-size:.92rem; }
+  .bola { width:12px; height:12px; border-radius:50%; flex:0 0 auto; }
+
+  /* Botão redondo + */
+  .fab { position:fixed; right:20px; bottom:calc(20px + env(safe-area-inset-bottom, 0px)); width:58px; height:58px; padding:0; margin:0;
+         border-radius:50%; font-size:2rem; line-height:1; box-shadow:0 4px 14px rgba(0,0,0,.35); z-index:50; animation:aparecer .4s ease both; }
+  .fab:hover { transform:scale(1.08); }
+
   #tituloRelatorio { display:none; }
+
+  @keyframes aparecer { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+  @keyframes crescer { from { transform:scaleY(0); } to { transform:scaleY(1); } }
+  @keyframes girar { from { opacity:0; transform:scale(.7) rotate(-40deg); } to { opacity:1; transform:none; } }
+  @keyframes brotar { from { opacity:0; transform:scale(.4); } to { opacity:1; transform:none; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation:none !important; transition:none !important; }
+  }
   @media print {
+    * { animation:none !important; }
     body, body.escuro { --verde-claro:#fff; --cartao:#fff; --texto:#000; --linha:#ddd; --entrada:#1f8a4c; --saida:#c0392b; color-scheme:light; }
     body { background:#fff; }
     header, .noprint { display:none !important; }
     #tituloRelatorio { display:block; font-size:1.4rem; font-weight:700; margin-bottom:12px; }
-    .card { box-shadow:none; border:1px solid #ddd; }
+    .card, .stat { box-shadow:none; border:1px solid #ddd; }
+    .stat.destaque { background:#fff; color:#000; border:1px solid #ddd; }
     table { min-width:0; }
   }
 </style>
@@ -57,7 +112,16 @@
 <main>
 
   <section id="telaLogin" class="card">
-    <h2>Entrar</h2>
+    <div class="marca">
+      <svg class="planta" viewBox="0 0 120 100" width="110" height="92" aria-hidden="true">
+        <ellipse cx="60" cy="90" rx="42" ry="8" fill="#8b5e34"/>
+        <path d="M60 88 C60 70 60 55 60 40" stroke-width="5" stroke-linecap="round" fill="none" style="stroke:var(--entrada)"/>
+        <path d="M60 52 C40 52 26 40 24 24 C44 24 58 34 60 52Z" style="fill:var(--entrada)"/>
+        <path d="M60 44 C78 44 92 32 96 16 C76 16 62 26 60 44Z" style="fill:var(--entrada);opacity:.7"/>
+      </svg>
+      <h1>Semente da Fé</h1>
+      <p class="sub">Finanças da igreja</p>
+    </div>
     <input id="nome" placeholder="Seu nome (só para criar conta)">
     <input id="email" type="email" placeholder="E-mail">
     <input id="senha" type="password" placeholder="Senha (mínimo 6 caracteres)">
@@ -65,6 +129,7 @@
     <button id="btnCriar" class="sec">Criar conta</button><br>
     <button id="btnEsqueci" class="link">Esqueci minha senha</button>
     <p id="msg"></p>
+    <p class="versiculo">“Se tiverdes fé como um grão de mostarda… nada vos será impossível.”<br>Mateus 17:20</p>
   </section>
 
   <section id="telaSenha" class="card hidden">
@@ -77,6 +142,11 @@
   <section id="telaApp" class="hidden">
     <div id="tituloRelatorio"></div>
 
+    <div class="boasvindas noprint">
+      <div id="ola" class="ola"></div>
+      <div id="dataHoje" class="rotulo"></div>
+    </div>
+
     <div class="card noprint">
       <div class="rotulo">Mostrar o mês:</div>
       <div class="linha">
@@ -85,17 +155,26 @@
       </div>
     </div>
 
-    <div class="card totais">
-      <div id="boxAnterior"><div class="rotulo">Saldo do mês anterior</div><div id="saldoAnterior" class="valor">R$ 0,00</div></div>
-      <div><div class="rotulo">Entradas</div><div id="totEntrada" class="valor entrada">R$ 0,00</div></div>
-      <div><div class="rotulo">Saídas</div><div id="totSaida" class="valor saida">R$ 0,00</div></div>
-      <div><div class="rotulo">Saldo</div><div id="saldo" class="valor">R$ 0,00</div></div>
+    <div class="stats">
+      <div id="boxAnterior" class="stat"><div class="ico">📅</div><div><div class="rotulo">Saldo do mês anterior</div><div id="saldoAnterior" class="valor">R$ 0,00</div></div></div>
+      <div class="stat st-ent"><div class="ico">⬆️</div><div><div class="rotulo">Entradas</div><div id="totEntrada" class="valor entrada">R$ 0,00</div></div></div>
+      <div class="stat st-sai"><div class="ico">⬇️</div><div><div class="rotulo">Saídas</div><div id="totSaida" class="valor saida">R$ 0,00</div></div></div>
+      <div id="boxSaldo" class="stat destaque"><div class="ico">💰</div><div><div class="rotulo">Saldo</div><div id="saldo" class="valor">R$ 0,00</div></div></div>
     </div>
 
     <div class="card">
       <h3>Entradas e saídas por mês</h3>
       <div id="grafico" class="grafico"></div>
       <div class="rotulo">Verde = entradas · Vermelho = saídas (últimos 6 meses com lançamentos)</div>
+    </div>
+
+    <div class="card">
+      <h3>Divisão por categoria</h3>
+      <div class="chips noprint">
+        <button id="btnPizzaEnt" class="sec chip ativo">Entradas</button>
+        <button id="btnPizzaSai" class="sec chip">Saídas</button>
+      </div>
+      <div id="pizza"></div>
     </div>
 
     <div class="card">
@@ -139,6 +218,8 @@
         </table>
       </div>
     </div>
+
+    <button id="btnFab" class="fab noprint" title="Novo lançamento" aria-label="Novo lançamento">+</button>
   </section>
 </main>
 
@@ -153,10 +234,13 @@
   const hoje = () => new Date().toLocaleDateString("sv-SE"); // AAAA-MM-DD
   const fmtData = s => { const [a, m, d] = s.split("-"); return `${d}/${m}/${a}`; };
   const CATEGORIAS_PADRAO = ["Dízimo", "Oferta", "Despesa", "Outro"];
+  const PALETA = ["#1f8a4c", "#3b82f6", "#f59e0b", "#a855f7", "#ef4444", "#14b8a6", "#ec4899", "#84cc16"];
 
   let todos = [];          // todos os lançamentos vindos do banco
   let extras = [];         // categorias criadas pelos usuários
+  let doMesAtual = [];     // lançamentos do mês escolhido
   let visiveisAtual = [];  // o que está aparecendo na lista (para a planilha)
+  let tipoPizza = "entrada";
   let meuId = null;
   let editandoId = null;
   let emRecuperacao = false;
@@ -178,6 +262,7 @@
   async function carregar() {
     const { data: { user } } = await db.auth.getUser();
     meuId = user.id;
+    boasVindas(user);
     const r = await db.from("lancamentos").select("*").order("data", { ascending:false }).order("id", { ascending:false });
     if (r.error) { alert(r.error.message); return; }
     todos = r.data;
@@ -185,6 +270,16 @@
     extras = c.error ? [] : c.data.map(x => x.nome);
     montarCategorias();
     mostrar();
+  }
+
+  function boasVindas(user) {
+    const completo = (user.user_metadata && user.user_metadata.nome) || (user.email || "").split("@")[0];
+    const primeiro = completo.trim().split(/\s+/)[0];
+    const h = new Date().getHours();
+    const saudacao = h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite";
+    $("ola").textContent = `${saudacao}, ${primeiro}! 🌱`;
+    const d = new Date().toLocaleDateString("pt-BR", { weekday:"long", day:"numeric", month:"long", year:"numeric" });
+    $("dataHoje").textContent = d.charAt(0).toUpperCase() + d.slice(1);
   }
 
   function montarCategorias(selecionar) {
@@ -202,45 +297,16 @@
     if (nomes.includes(atual)) $("categoria").value = atual;
   }
 
-  function mostrar() {
+  // soLista = true: só atualiza a lista (usado na busca, para os gráficos não reanimarem)
+  function mostrar(soLista) {
     const mes = $("filtroMes").value;
     const doMes = todos.filter(t => !mes || t.data.startsWith(mes));
+    doMesAtual = doMes;
     const busca = $("busca").value.trim().toLowerCase();
     const visiveis = busca
       ? doMes.filter(t => [t.descricao, t.categoria, t.lancado_por].join(" ").toLowerCase().includes(busca))
       : doMes;
     visiveisAtual = visiveis;
-
-    $("tituloRelatorio").textContent = "Semente da Fé — Relatório " + (mes ? "de " + mes.split("-")[1] + "/" + mes.split("-")[0] : "de todos os meses");
-
-    // saldo que veio dos meses anteriores
-    let anterior = 0;
-    if (mes) {
-      todos.forEach(t => { if (t.data < mes + "-01") anterior += t.tipo === "entrada" ? Number(t.valor) : -Number(t.valor); });
-    }
-    $("boxAnterior").classList.toggle("hidden", !mes);
-
-    let ent = 0, sai = 0;
-    const porCategoria = {};
-    doMes.forEach(t => {
-      const v = Number(t.valor);
-      if (t.tipo === "entrada") ent += v; else sai += v;
-      porCategoria[t.categoria] = porCategoria[t.categoria] || { ent:0, sai:0 };
-      porCategoria[t.categoria][t.tipo === "entrada" ? "ent" : "sai"] += v;
-    });
-    $("saldoAnterior").textContent = brl(anterior);
-    $("totEntrada").textContent = brl(ent);
-    $("totSaida").textContent = brl(sai);
-    $("saldo").textContent = brl(anterior + ent - sai);
-
-    $("listaCategorias").innerHTML = "";
-    Object.keys(porCategoria).sort().forEach(cat => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `<td></td><td class="entrada">${brl(porCategoria[cat].ent)}</td><td class="saida">${brl(porCategoria[cat].sai)}</td>`;
-      tr.children[0].textContent = cat;
-      $("listaCategorias").appendChild(tr);
-    });
-    if (!doMes.length) $("listaCategorias").innerHTML = '<tr><td colspan="3">Nenhum lançamento neste período.</td></tr>';
 
     $("lista").innerHTML = "";
     visiveis.forEach(t => {
@@ -267,7 +333,43 @@
     });
     if (!visiveis.length) $("lista").innerHTML = '<tr><td colspan="6">Nenhum lançamento encontrado.</td></tr>';
 
+    if (soLista) return;
+
+    $("tituloRelatorio").textContent = "Semente da Fé — Relatório " + (mes ? "de " + mes.split("-")[1] + "/" + mes.split("-")[0] : "de todos os meses");
+
+    // saldo que veio dos meses anteriores
+    let anterior = 0;
+    if (mes) {
+      todos.forEach(t => { if (t.data < mes + "-01") anterior += t.tipo === "entrada" ? Number(t.valor) : -Number(t.valor); });
+    }
+    $("boxAnterior").classList.toggle("hidden", !mes);
+
+    let ent = 0, sai = 0;
+    const porCategoria = {};
+    doMes.forEach(t => {
+      const v = Number(t.valor);
+      if (t.tipo === "entrada") ent += v; else sai += v;
+      porCategoria[t.categoria] = porCategoria[t.categoria] || { ent:0, sai:0 };
+      porCategoria[t.categoria][t.tipo === "entrada" ? "ent" : "sai"] += v;
+    });
+    const saldoFinal = anterior + ent - sai;
+    $("saldoAnterior").textContent = brl(anterior);
+    $("totEntrada").textContent = brl(ent);
+    $("totSaida").textContent = brl(sai);
+    $("saldo").textContent = brl(saldoFinal);
+    $("boxSaldo").classList.toggle("neg", saldoFinal < 0);
+
+    $("listaCategorias").innerHTML = "";
+    Object.keys(porCategoria).sort().forEach(cat => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td></td><td class="entrada">${brl(porCategoria[cat].ent)}</td><td class="saida">${brl(porCategoria[cat].sai)}</td>`;
+      tr.children[0].textContent = cat;
+      $("listaCategorias").appendChild(tr);
+    });
+    if (!doMes.length) $("listaCategorias").innerHTML = '<tr><td colspan="3">Nenhum lançamento neste período.</td></tr>';
+
     desenharGrafico();
+    desenharPizza();
   }
 
   function desenharGrafico() {
@@ -282,7 +384,7 @@
     g.innerHTML = "";
     if (!meses.length) { g.textContent = "Ainda não há lançamentos."; return; }
     const max = Math.max(...meses.map(m => Math.max(porMes[m].e, porMes[m].s)), 1);
-    const altura = v => v > 0 ? Math.max(3, Math.round(v / max * 140)) : 0;
+    const altura = v => v > 0 ? Math.max(4, Math.round(v / max * 150)) : 0;
     const curto = v => Math.round(v).toLocaleString("pt-BR");
     meses.forEach(m => {
       const [a, mm] = m.split("-");
@@ -300,6 +402,51 @@
       col.append(barras, nome, ve, vs);
       g.appendChild(col);
     });
+  }
+
+  function desenharPizza() {
+    $("btnPizzaEnt").classList.toggle("ativo", tipoPizza === "entrada");
+    $("btnPizzaSai").classList.toggle("ativo", tipoPizza === "saida");
+    const soma = {};
+    let total = 0;
+    doMesAtual.filter(t => t.tipo === tipoPizza).forEach(t => {
+      soma[t.categoria] = (soma[t.categoria] || 0) + Number(t.valor);
+      total += Number(t.valor);
+    });
+    const area = $("pizza");
+    area.innerHTML = "";
+    const nomes = Object.keys(soma).sort((a, b) => soma[b] - soma[a]);
+    if (!nomes.length || total <= 0) {
+      area.textContent = "Sem " + (tipoPizza === "entrada" ? "entradas" : "saídas") + " neste período.";
+      return;
+    }
+    let acum = 0;
+    const partes = nomes.map((n, i) => {
+      const ini = acum / total * 100;
+      acum += soma[n];
+      return `${PALETA[i % PALETA.length]} ${ini}% ${acum / total * 100}%`;
+    });
+    const rosca = document.createElement("div");
+    rosca.className = "rosca";
+    rosca.style.background = `conic-gradient(${partes.join(",")})`;
+    const furo = document.createElement("div");
+    furo.className = "furo";
+    const r1 = document.createElement("div"); r1.className = "rotulo"; r1.textContent = "Total";
+    const r2 = document.createElement("div"); r2.className = "tot"; r2.textContent = brl(total);
+    furo.append(r1, r2);
+    rosca.appendChild(furo);
+
+    const legenda = document.createElement("div");
+    legenda.className = "legenda";
+    nomes.forEach((n, i) => {
+      const item = document.createElement("div"); item.className = "item";
+      const bola = document.createElement("span"); bola.className = "bola"; bola.style.background = PALETA[i % PALETA.length];
+      const txt = document.createElement("span");
+      txt.textContent = `${n}: ${brl(soma[n])} (${Math.round(soma[n] / total * 100)}%)`;
+      item.append(bola, txt);
+      legenda.appendChild(item);
+    });
+    area.append(rosca, legenda);
   }
 
   function limparForm() {
@@ -345,10 +492,16 @@
   // ---- Botões da tela de lançamentos ----
   $("filtroMes").onchange = () => { $("filtroMes").dataset.todos = ""; mostrar(); };
   $("btnTodos").onclick = () => { $("filtroMes").value = ""; $("filtroMes").dataset.todos = "1"; mostrar(); };
-  $("busca").oninput = mostrar;
+  $("busca").oninput = () => mostrar(true);
   $("btnCsv").onclick = baixarCsv;
   $("btnImprimir").onclick = () => window.print();
   $("btnCancelar").onclick = limparForm;
+  $("btnPizzaEnt").onclick = () => { tipoPizza = "entrada"; desenharPizza(); };
+  $("btnPizzaSai").onclick = () => { tipoPizza = "saida"; desenharPizza(); };
+  $("btnFab").onclick = () => {
+    $("tituloForm").scrollIntoView({ behavior:"smooth" });
+    setTimeout(() => $("descricao").focus({ preventScroll:true }), 450);
+  };
 
   $("btnNovaCat").onclick = async () => {
     let nome = prompt("Nome da nova categoria:");
