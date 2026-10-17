@@ -5,17 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Semente da Fé</title>
 <style>
-  :root { --verde:#1f8a4c; --verde-escuro:#146236; --verde-claro:#e8f5ec; --texto:#1c2a22; --vermelho:#c0392b; }
+  :root { --verde:#1f8a4c; --verde-escuro:#146236; --verde-claro:#e8f5ec; --texto:#1c2a22; --vermelho:#c0392b;
+          --cartao:#ffffff; --borda:#b9c9be; --linha:#e3e3e3; --entrada:#1f8a4c; --saida:#c0392b; }
+  body.escuro { --verde-claro:#000000; --cartao:#161616; --texto:#e4e4e4; --borda:#3a3a3a; --linha:#2a2a2a;
+                --entrada:#4ade80; --saida:#ff7b6e; color-scheme:dark; }
   * { box-sizing:border-box; }
   body { margin:0; font-family:system-ui,Arial,sans-serif; background:var(--verde-claro); color:var(--texto); }
   header { background:var(--verde); color:#fff; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; }
   header strong { font-size:1.3rem; }
   main { max-width:860px; margin:20px auto; padding:0 16px; }
-  .card { background:#fff; border-radius:12px; padding:20px; margin-bottom:16px; box-shadow:0 1px 4px rgba(0,0,0,.08); }
-  input, select, button { font:inherit; padding:10px; border-radius:8px; border:1px solid #b9c9be; width:100%; margin:6px 0; }
+  .card { background:var(--cartao); border-radius:12px; padding:20px; margin-bottom:16px; box-shadow:0 1px 4px rgba(0,0,0,.08); }
+  input, select, button { font:inherit; padding:10px; border-radius:8px; border:1px solid var(--borda); background:var(--cartao); color:var(--texto); width:100%; margin:6px 0; }
   button { background:var(--verde); color:#fff; border:none; cursor:pointer; }
   button:hover { background:var(--verde-escuro); }
-  button.sec { background:#fff; color:var(--verde); border:1px solid var(--verde); width:auto; margin:0; padding:6px 12px; }
+  button.sec { background:var(--cartao); color:var(--entrada); border:1px solid var(--entrada); width:auto; margin:0; padding:6px 12px; }
   .linha { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
   .linha > * { flex:1; min-width:150px; }
   .linha > button { flex:0 0 auto; }
@@ -25,11 +28,15 @@
   .valor { font-size:1.4rem; font-weight:700; }
   .tabela { overflow-x:auto; }
   table { width:100%; border-collapse:collapse; min-width:520px; }
-  td, th { padding:8px; border-bottom:1px solid #e3e3e3; text-align:left; font-size:.95rem; }
-  .entrada { color:var(--verde); font-weight:600; } .saida { color:var(--vermelho); font-weight:600; }
+  td, th { padding:8px; border-bottom:1px solid var(--linha); text-align:left; font-size:.95rem; }
+  .entrada { color:var(--entrada); font-weight:600; } .saida { color:var(--saida); font-weight:600; }
+  .opcao { display:flex; align-items:center; gap:12px; cursor:pointer; }
+  .opcao input { width:auto; margin:0; transform:scale(1.5); }
+  .botoes { display:flex; gap:8px; }
   .hidden { display:none; }
   #tituloRelatorio { display:none; }
   @media print {
+    body, body.escuro { --verde-claro:#fff; --cartao:#fff; --texto:#000; --linha:#ddd; --entrada:#1f8a4c; --saida:#c0392b; color-scheme:light; }
     body { background:#fff; }
     header, .noprint { display:none !important; }
     #tituloRelatorio { display:block; font-size:1.4rem; font-weight:700; margin-bottom:12px; }
@@ -39,7 +46,7 @@
 </style>
 </head>
 <body>
-<header><strong>🌱 Semente da Fé</strong><button id="btnSair" class="sec hidden">Sair</button></header>
+<header><strong>🌱 Semente da Fé</strong><div class="botoes"><button id="btnConfig" class="sec hidden">⚙️ Configurações</button><button id="btnSair" class="sec hidden">Sair</button></div></header>
 <main>
 
   <section id="telaLogin" class="card">
@@ -54,6 +61,12 @@
 
   <section id="telaApp" class="hidden">
     <div id="tituloRelatorio"></div>
+
+    <div id="painelConfig" class="card noprint hidden">
+      <h3>Configurações</h3>
+      <label class="opcao"><input type="checkbox" id="chkEscuro"><span>Fundo preto (descansa os olhos)</span></label>
+      <div class="rotulo" style="margin-top:8px">Fica salvo neste aparelho.</div>
+    </div>
 
     <div class="card noprint">
       <div class="rotulo">Mostrar o mês:</div>
@@ -134,6 +147,7 @@
     $("telaLogin").classList.toggle("hidden", !!session);
     $("telaApp").classList.toggle("hidden", !session);
     $("btnSair").classList.toggle("hidden", !session);
+    $("btnConfig").classList.toggle("hidden", !session);
     if (session) {
       if (!$("filtroMes").value && !$("filtroMes").dataset.todos) $("filtroMes").value = hoje().slice(0, 7);
       limparForm();
@@ -286,6 +300,18 @@
     limparForm();
     carregar();
   };
+
+  // ---- Configurações: fundo preto ----
+  function aplicarTema(escuro) {
+    document.body.classList.toggle("escuro", escuro);
+    $("chkEscuro").checked = escuro;
+  }
+  try { aplicarTema(localStorage.getItem("tema") === "escuro"); } catch (e) {}
+  $("chkEscuro").onchange = () => {
+    aplicarTema($("chkEscuro").checked);
+    try { localStorage.setItem("tema", $("chkEscuro").checked ? "escuro" : "claro"); } catch (e) {}
+  };
+  $("btnConfig").onclick = () => $("painelConfig").classList.toggle("hidden");
 
   atualizarTela();
 </script>
