@@ -295,13 +295,16 @@
       if (n && !nomes.some(x => x.toLowerCase() === n.toLowerCase())) nomes.push(n);
     });
     const atual = selecionar || $("categoria").value;
+    // Entrada não tem "Despesa"; Saída não tem "Dízimo" nem "Oferta"
+    const bloqueadas = $("tipo").value === "saida" ? ["dízimo", "oferta"] : ["despesa"];
+    const lista = nomes.filter(n => n === selecionar || !bloqueadas.includes(n.toLowerCase()));
     $("categoria").innerHTML = "";
-    nomes.forEach(n => {
+    lista.forEach(n => {
       const o = document.createElement("option");
       o.value = n; o.textContent = n;
       $("categoria").appendChild(o);
     });
-    if (nomes.includes(atual)) $("categoria").value = atual;
+    if (lista.includes(atual)) $("categoria").value = atual;
   }
 
   // soLista = true: só atualiza a lista (usado na busca, para os gráficos não reanimarem)
@@ -464,7 +467,7 @@
     $("btnAdd").textContent = "Adicionar";
     $("btnCancelar").classList.add("hidden");
     $("descricao").value = ""; $("fornecedor").value = ""; $("valor").value = "";
-    $("tipo").value = "entrada"; $("categoria").selectedIndex = 0;
+    $("tipo").value = "entrada"; montarCategorias(); $("categoria").selectedIndex = 0;
     $("data").value = hoje();
   }
 
@@ -473,7 +476,7 @@
     $("tituloForm").textContent = "Editar lançamento";
     $("btnAdd").textContent = "Salvar alteração";
     $("btnCancelar").classList.remove("hidden");
-    $("tipo").value = t.tipo; $("categoria").value = t.categoria;
+    $("tipo").value = t.tipo; montarCategorias(t.categoria); $("categoria").value = t.categoria;
     $("descricao").value = t.descricao; $("fornecedor").value = t.fornecedor || ""; $("valor").value = t.valor; $("data").value = t.data;
     $("tituloForm").scrollIntoView({ behavior:"smooth" });
   }
@@ -505,6 +508,7 @@
   $("btnCsv").onclick = baixarCsv;
   $("btnImprimir").onclick = () => window.print();
   $("btnCancelar").onclick = limparForm;
+  $("tipo").onchange = () => montarCategorias();
   $("btnPizzaEnt").onclick = () => { tipoPizza = "entrada"; desenharPizza(); };
   $("btnPizzaSai").onclick = () => { tipoPizza = "saida"; desenharPizza(); };
   $("btnFab").onclick = () => {
