@@ -16,6 +16,8 @@
   }
   header { background:var(--verde); color:#fff; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; }
   header strong { font-size:1.3rem; }
+  header .botoes { margin-left:auto; }
+  header.sem-faixa { background:transparent; padding:10px 20px; }
   main { max-width:860px; margin:20px auto; padding:0 16px 100px; }
 
   .card { background:var(--cartao); border-radius:14px; padding:20px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,.08); animation:aparecer .4s ease both; }
@@ -128,7 +130,7 @@
 </style>
 </head>
 <body>
-<header><strong>🌱 Semente da Fé</strong><div class="botoes"><button id="btnSair" class="sec hidden">Sair</button><button id="btnTema" class="sec icone" title="Fundo preto" aria-label="Alternar fundo preto" aria-pressed="false">🌙</button></div></header>
+<header id="topo"><strong id="tituloTopo" class="hidden">🌱 Semente da Fé</strong><div class="botoes"><button id="btnSair" class="sec hidden">Sair</button><button id="btnTema" class="sec icone" title="Fundo preto" aria-label="Alternar fundo preto" aria-pressed="false">🌙</button></div></header>
 <main>
 
   <section id="telaLogin" class="card">
@@ -289,6 +291,8 @@
     $("telaLogin").classList.toggle("hidden", !!session);
     $("telaApp").classList.toggle("hidden", !session || recup);
     $("btnSair").classList.toggle("hidden", !session);
+    $("tituloTopo").classList.toggle("hidden", !session); // na tela de login o topo mostra só a lua
+    $("topo").classList.toggle("sem-faixa", !session);
     if (session && !recup) {
       if (!$("filtroMes").value && !$("filtroMes").dataset.todos) $("filtroMes").value = hoje().slice(0, 7);
       limparForm();
