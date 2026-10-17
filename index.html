@@ -206,6 +206,9 @@
       <input id="fornecedor" placeholder="Fornecedor (opcional)" maxlength="80">
       <input id="valor" type="number" step="0.01" placeholder="Valor (ex.: 150.50)">
       <input id="data" type="date">
+      <div class="rotulo" style="margin-top:8px">📎 Comprovante (foto ou PDF, até 5 MB)</div>
+      <input id="comprovante" type="file" accept="image/*,application/pdf">
+      <div id="dicaComp" class="rotulo hidden"></div>
       <button id="btnAdd">Adicionar</button>
       <button id="btnCancelar" class="sec hidden">Cancelar edição</button>
     </div>
@@ -219,7 +222,7 @@
       <input id="busca" class="noprint" type="search" placeholder="🔍 Buscar por descrição, fornecedor, categoria ou nome">
       <div class="tabela">
         <table>
-          <thead><tr><th>Data</th><th>Categoria</th><th>Descrição</th><th>Fornecedor</th><th>Valor</th><th>Lançado por</th><th class="noprint"></th></tr></thead>
+          <thead><tr><th>Data</th><th>Categoria</th><th>Descrição</th><th>Fornecedor</th><th>Valor</th><th>Lançado por</th><th class="noprint">Comprovante</th><th class="noprint"></th></tr></thead>
           <tbody id="lista"></tbody>
         </table>
       </div>
@@ -250,7 +253,18 @@
   let tipoPizza = "entrada";
   let meuId = null;
   let editandoId = null;
+  let editandoComp = null; // comprovante que o lançamento em edição já tem
   let emRecuperacao = false;
+
+  async function verComprovante(caminho) {
+    const janela = window.open("", "_blank"); // abre já, para o navegador não bloquear
+    const { data, error } = await db.storage.from("comprovantes").createSignedUrl(caminho, 3600);
+    if (error || !data) {
+      if (janela) janela.close();
+      return alert("Não foi possível abrir o comprovante: " + (error ? error.message : "tente de novo"));
+    }
+    if (janela) janela.location.href = data.signedUrl; else window.location.href = data.signedUrl;
+  }
 
   async function atualizarTela() {
     const { data: { session } } = await db.auth.getSession();
@@ -321,11 +335,17 @@
     $("lista").innerHTML = "";
     visiveis.forEach(t => {
       const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${fmtData(t.data)}</td><td></td><td></td><td></td><td class="${t.tipo}">${brl(t.valor)}</td><td></td><td class="noprint"></td>`;
+      tr.innerHTML = `<td>${fmtData(t.data)}</td><td></td><td></td><td></td><td class="${t.tipo}">${brl(t.valor)}</td><td></td><td class="noprint"></td><td class="noprint"></td>`;
       tr.children[1].textContent = t.categoria;
       tr.children[2].textContent = t.descricao;
       tr.children[3].textContent = t.fornecedor || "";
       tr.children[5].textContent = t.lancado_por;
+      if (t.comprovante) {
+        const bv = document.createElement("button");
+        bv.className = "sec"; bv.textContent = "📎 Ver";
+        bv.onclick = () => verComprovante(t.comprovante);
+        tr.children[6].appendChild(bv);
+      }
       if (t.user_id === meuId) {
         const be = document.createElement("button");
         be.className = "sec"; be.textContent = "Editar"; be.style.marginRight = "6px";
@@ -336,13 +356,14 @@
           if (!confirm("Apagar este lançamento?")) return;
           const { error } = await db.from("lancamentos").delete().eq("id", t.id);
           if (error) return alert(error.message);
+          if (t.comprovante) await db.storage.from("comprovantes").remove([t.comprovante]);
           carregar();
         };
-        tr.children[6].append(be, bd);
+        tr.children[7].append(be, bd);
       }
       $("lista").appendChild(tr);
     });
-    if (!visiveis.length) $("lista").innerHTML = '<tr><td colspan="7">Nenhum lançamento encontrado.</td></tr>';
+    if (!visiveis.length) $("lista").innerHTML = '<tr><td colspan="8">Nenhum lançamento encontrado.</td></tr>';
 
     if (soLista) return;
 
@@ -463,6 +484,9 @@
 
   function limparForm() {
     editandoId = null;
+    editandoComp = null;
+    $("comprovante").value = "";
+    $("dicaComp").classList.add("hidden");
     $("tituloForm").textContent = "Novo lançamento";
     $("btnAdd").textContent = "Adicionar";
     $("btnCancelar").classList.add("hidden");
@@ -473,6 +497,10 @@
 
   function editar(t) {
     editandoId = t.id;
+    editandoComp = t.comprovante || null;
+    $("comprovante").value = "";
+    $("dicaComp").textContent = editandoComp ? "Este lançamento já tem comprovante. Escolha outro arquivo só se quiser substituir." : "";
+    $("dicaComp").classList.toggle("hidden", !editandoComp);
     $("tituloForm").textContent = "Editar lançamento";
     $("btnAdd").textContent = "Salvar alteração";
     $("btnCancelar").classList.remove("hidden");
@@ -533,16 +561,42 @@
     const valor = parseFloat($("valor").value);
     if (!$("descricao").value.trim() || isNaN(valor) || !$("data").value) return alert("Preencha descrição, valor e data.");
     const campos = { descricao:$("descricao").value.trim(), fornecedor:$("fornecedor").value.trim() || null, valor, tipo:$("tipo").value, categoria:$("categoria").value, data:$("data").value };
-    let error;
-    if (editandoId) {
-      ({ error } = await db.from("lancamentos").update(campos).eq("id", editandoId));
-    } else {
-      const { data: { user } } = await db.auth.getUser();
-      ({ error } = await db.from("lancamentos").insert({ ...campos, lancado_por: user.user_metadata.nome || user.email }));
+    const arq = $("comprovante").files[0];
+    if (arq) {
+      if (arq.size > 5 * 1024 * 1024) return alert("O comprovante pode ter no máximo 5 MB.");
+      if (!(arq.type.startsWith("image/") || arq.type === "application/pdf")) return alert("Anexe uma foto ou um PDF.");
     }
-    if (error) return alert(error.message);
-    limparForm();
-    carregar();
+    const { data: { user } } = await db.auth.getUser();
+    const rotuloBtn = $("btnAdd").textContent;
+    $("btnAdd").disabled = true;
+    let caminhoNovo = null;
+    try {
+      if (arq) {
+        $("btnAdd").textContent = "Enviando comprovante...";
+        const ext = ((arq.name.split(".").pop() || "bin").toLowerCase().replace(/[^a-z0-9]/g, "") || "bin").slice(0, 5);
+        caminhoNovo = `${user.id}/${Date.now()}.${ext}`;
+        const up = await db.storage.from("comprovantes").upload(caminhoNovo, arq, { contentType: arq.type });
+        if (up.error) { caminhoNovo = null; return alert("Não foi possível enviar o comprovante: " + up.error.message); }
+        campos.comprovante = caminhoNovo;
+      }
+      let error;
+      if (editandoId) {
+        ({ error } = await db.from("lancamentos").update(campos).eq("id", editandoId));
+      } else {
+        ({ error } = await db.from("lancamentos").insert({ ...campos, lancado_por: user.user_metadata.nome || user.email }));
+      }
+      if (error) {
+        if (caminhoNovo) await db.storage.from("comprovantes").remove([caminhoNovo]);
+        return alert(error.message);
+      }
+      // se substituiu o comprovante de um lançamento editado, apaga o antigo
+      if (caminhoNovo && editandoId && editandoComp) await db.storage.from("comprovantes").remove([editandoComp]);
+      limparForm();
+      carregar();
+    } finally {
+      $("btnAdd").disabled = false;
+      if ($("btnAdd").textContent === "Enviando comprovante...") $("btnAdd").textContent = rotuloBtn;
+    }
   };
 
   // ---- Login, senha e sair ----
